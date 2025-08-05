@@ -11,7 +11,8 @@ import {
   ExclamationTriangleIcon,
   ClipboardDocumentCheckIcon,
   Cog6ToothIcon,
-  Bars3Icon
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import AuthModal from './AuthModal'
 
@@ -49,44 +50,91 @@ export default function Layout({ children }: LayoutProps) {
           </Link>
           
           <div className="flex items-center gap-4">
-            {/* Navigation Links */}
-            <div className="hidden md:flex gap-4">
+            {/* Navigation Links with Icons & Active States */}
+            <div className="hidden md:flex items-center gap-1">
               <Link 
-                href="/chat" 
-                className="hover:text-blue-200 transition-colors"
+                href="/"
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/' 
+                    ? 'bg-blue-800 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                }`}
+                aria-label="Navigate to homepage"
+              >
+                <HomeIcon className="w-4 h-4" />
+                <span>Home</span>
+              </Link>
+              
+              <Link 
+                href="/chat"
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/chat' 
+                    ? 'bg-blue-800 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                }`}
                 aria-label="Chat with assistant"
               >
-                Chat
+                <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                <span>Chat</span>
               </Link>
+              
               <Link 
-                href="/report" 
-                className="hover:text-blue-200 transition-colors"
+                href="/report"
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/report' 
+                    ? 'bg-blue-800 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                }`}
                 aria-label="Report an incident"
               >
-                Report
+                <ExclamationTriangleIcon className="w-4 h-4" />
+                <span>Report</span>
               </Link>
+              
               <Link 
-                href="/status" 
-                className="hover:text-blue-200 transition-colors"
+                href="/status"
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/status' 
+                    ? 'bg-blue-800 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                }`}
                 aria-label="Check incident status"
               >
-                Status
+                <ClipboardDocumentCheckIcon className="w-4 h-4" />
+                <span>Status</span>
               </Link>
+              
               {user?.role === 'staff' && (
                 <Link 
-                  href="/staff" 
-                  className="hover:text-blue-200 transition-colors"
+                  href="/staff"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    pathname === '/staff' 
+                      ? 'bg-blue-800 text-white shadow-lg' 
+                      : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                  }`}
                   aria-label="Staff dashboard"
                 >
-                  Dashboard
+                  <Cog6ToothIcon className="w-4 h-4" />
+                  <span>Dashboard</span>
                 </Link>
               )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="text-blue-100 hover:text-white p-2 rounded-lg hover:bg-blue-800 transition-colors"
+                aria-label="Toggle mobile menu"
+              >
+                <Bars3Icon className="w-6 h-6" />
+              </button>
             </div>
 
             {/* User Info & Auth */}
             {user ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm">
+                <span className="text-sm hidden lg:block">
                   {user.name} 
                   <span className="text-blue-300">({user.role})</span>
                 </span>
@@ -111,74 +159,81 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </nav>
       
-      {/* Mobile Navigation */}
-      <div className="md:hidden bg-blue-900 border-t border-blue-800">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-around py-2">
-            <Link 
-              href="/"
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 ${
-                pathname === '/' 
-                  ? 'bg-blue-800 text-white' 
-                  : 'text-blue-200 hover:text-white hover:bg-blue-800'
-              }`}
-            >
-              <HomeIcon className="w-5 h-5" />
-              <span className="text-xs font-medium">Home</span>
-            </Link>
-            
-            <Link 
-              href="/chat"
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 ${
-                pathname === '/chat' 
-                  ? 'bg-blue-800 text-white' 
-                  : 'text-blue-200 hover:text-white hover:bg-blue-800'
-              }`}
-            >
-              <ChatBubbleLeftRightIcon className="w-5 h-5" />
-              <span className="text-xs font-medium">Chat</span>
-            </Link>
-            
-            <Link 
-              href="/report"
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 ${
-                pathname === '/report' 
-                  ? 'bg-blue-800 text-white' 
-                  : 'text-blue-200 hover:text-white hover:bg-blue-800'
-              }`}
-            >
-              <ExclamationTriangleIcon className="w-5 h-5" />
-              <span className="text-xs font-medium">Report</span>
-            </Link>
-            
-            <Link 
-              href="/status"
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 ${
-                pathname === '/status' 
-                  ? 'bg-blue-800 text-white' 
-                  : 'text-blue-200 hover:text-white hover:bg-blue-800'
-              }`}
-            >
-              <ClipboardDocumentCheckIcon className="w-5 h-5" />
-              <span className="text-xs font-medium">Status</span>
-            </Link>
-            
-            {user?.role === 'staff' && (
+      {/* Mobile Menu Dropdown */}
+      {showMobileMenu && (
+        <div className="md:hidden bg-blue-800 border-t border-blue-700 shadow-lg">
+          <div className="container mx-auto px-4 py-3">
+            <div className="space-y-1">
               <Link 
-                href="/staff"
-                className={`flex flex-col items-center gap-1 py-2 px-3 rounded-lg transition-all duration-200 ${
-                  pathname === '/staff' 
-                    ? 'bg-blue-800 text-white' 
-                    : 'text-blue-200 hover:text-white hover:bg-blue-800'
+                href="/"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/' 
+                    ? 'bg-blue-700 text-white' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
                 }`}
               >
-                <Cog6ToothIcon className="w-5 h-5" />
-                <span className="text-xs font-medium">Staff</span>
+                <HomeIcon className="w-5 h-5" />
+                <span>Home</span>
               </Link>
-            )}
+              
+              <Link 
+                href="/chat"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/chat' 
+                    ? 'bg-blue-700 text-white' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                }`}
+              >
+                <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                <span>Chat Assistant</span>
+              </Link>
+              
+              <Link 
+                href="/report"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/report' 
+                    ? 'bg-blue-700 text-white' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                }`}
+              >
+                <ExclamationTriangleIcon className="w-5 h-5" />
+                <span>Report Issue</span>
+              </Link>
+              
+              <Link 
+                href="/status"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  pathname === '/status' 
+                    ? 'bg-blue-700 text-white' 
+                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                }`}
+              >
+                <ClipboardDocumentCheckIcon className="w-5 h-5" />
+                <span>Check Status</span>
+              </Link>
+              
+              {user?.role === 'staff' && (
+                <Link 
+                  href="/staff"
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    pathname === '/staff' 
+                      ? 'bg-blue-700 text-white' 
+                      : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <Cog6ToothIcon className="w-5 h-5" />
+                  <span>Staff Dashboard</span>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       <main className="container mx-auto p-4" role="main">
         {children}

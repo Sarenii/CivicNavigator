@@ -217,37 +217,20 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
     }
   }
 
-  const clearConversation = () => {
-    setMessages([{
-      id: '1',
-      text: 'Hello! I\'m your CivicNavigator assistant. How can I help you today?',
-      sender: 'bot',
-      timestamp: new Date(),
-      confidence: 1.0
-    }])
-  }
-
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 h-[600px] flex flex-col">
-      {/* Chat Header */}
-      <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">CivicNavigator Assistant</h2>
-            <p className="text-sm text-gray-600">Ask questions about municipal services</p>
-          </div>
-          <button
-            onClick={clearConversation}
-            className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded hover:bg-gray-200 transition-colors"
-            aria-label="Clear conversation"
-          >
-            Clear Chat
-          </button>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-white">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {messages.length === 1 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <ChatBubbleLeftRightIcon className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CivicNavigator</h2>
+            <p className="text-gray-600 max-w-md mx-auto">Ask me anything about municipal services, report issues, or check incident status.</p>
+          </div>
+        )}
+        
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}
@@ -257,7 +240,7 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
       </div>
 
       {/* Chat Input */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="border-t border-gray-200 bg-white p-6">
         <ChatInput 
           onSendMessage={sendMessage} 
           disabled={isLoading} 

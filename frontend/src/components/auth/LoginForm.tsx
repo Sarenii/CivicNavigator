@@ -1,12 +1,15 @@
+// components/auth/LoginForm.tsx
+
 'use client'
-import { useState,useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useApi } from '@/hooks/useApi'
 import ApiService from '../../../handler/ApiService'
-import {toast} from 'sonner'
-import { handleApiError } from '../utils/api'
+import { toast } from 'sonner'
 import { AuthResponse } from '../../../types'
+import Cookies from 'js-cookie'
+
 
 interface LoginFormProps {
   onSwitchToSignup: () => void
@@ -15,7 +18,7 @@ interface LoginFormProps {
 
 export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps) {
   const { login } = useAuth()
-  const { useAddItem: loginApi } =  useApi(ApiService.LOGIN_URL)
+  const { useAddItem: loginApi } = useApi<any, AuthResponse>(ApiService.LOGIN_URL)
  
   const [formData, setFormData] = useState({
     email: '',
@@ -26,78 +29,54 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   setIsLoading(true)
-  //   setError('')
-
-  //   try {
-  //     // Development mode - simulate API response
-  //     if (process.env.NODE_ENV === 'development') {
-  //       // Simulate API delay
-  //       await new Promise(resolve => setTimeout(resolve, 1000))
-        
-  //       // Mock successful login
-  //       const mockUserData = {
-  //         id: Math.random().toString(36).substr(2, 9),
-  //         name: formData.email.split('@')[0],
-  //         email: formData.email,
-  //         role: formData.role // Use selected role
-  //       }
-        
-  //       login(mockUserData)
-  //       onClose()
-  //       return
-  //     }
-
-  //     // Production API call
-  //     const response = await fetch('/api/auth/login', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(formData)
-  //     })
-
-  //     if (response.ok) {
-  //       const userData = await response.json()
-  //       login(userData)
-  //       onClose()
-  //     } else {
-  //       const errorData = await response.json()
-  //       setError(errorData.message || 'Login failed')
-  //     }
-  //   } catch (err) {
-  //     setError('Network error. Please try again.')
-  //   } finally {
-  //     setIsLoading(false)
-  //   }
-  // }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+
     try {
-      const response = loginApi.mutate({
-        item: formData,
-      },{
-        onSuccess: (data) => {
-          const response = data as AuthResponse
-          console.log(response.user.first_name, response.user.last_name)
+      loginApi.mutate({
+        item: formData as any,
+      }, {
+        onSuccess: (data: AuthResponse) => {
+          // Store tokens in cookies (your api.tsx interceptors will handle the rest)
+          Cookies.set('accessToken', data.access, { 
+            expires: 1, 
+            secure: true, 
+            sameSite: 'Strict' 
+          })
+          Cookies.set('refreshToken', data.refresh, { 
+            expires: 7, 
+            secure: true, 
+            sameSite: 'Strict' 
+          })
+          
+          // Update auth context
+          login({
+            id: data.user.id.toString(),
+            name: `${data.user.first_name} ${data.user.last_name}`,
+            email: data.user.email,
+            role: data.user.role.name as 'resident' | 'staff'
+          })
+          
           toast.success('Login successful')
           onClose()
         },
-        onError: (error) => {
-          setError(error.response?.data.non_field_errors?.[0] || 'Login failed')
-          toast.error(error.response?.data.non_field_errors?.[0] || 'Login failed')
+        onError: (error: any) => {
+          const errorMessage = error.response?.data?.non_field_errors?.[0] || 
+                              error.response?.data?.detail || 
+                              'Login failed'
+          setError(errorMessage)
+          toast.error(errorMessage)
         }
       })
     } catch (err) {
       setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
-
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

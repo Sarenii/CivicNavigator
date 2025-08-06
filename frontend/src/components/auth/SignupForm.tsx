@@ -1,7 +1,15 @@
+// components/auth/SignupForm.tsx
+
 'use client'
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { useApi } from '@/hooks/useApi'
+import ApiService from '../../../handler/ApiService'
+import { toast } from 'sonner'
+import { AuthResponse } from '../../../types'
+import Cookies from 'js-cookie'
+
 
 interface SignupFormProps {
   onSwitchToLogin: () => void
@@ -10,11 +18,15 @@ interface SignupFormProps {
 
 export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps) {
   const { login } = useAuth()
+  const { useAddItem: registerApi } = useApi<any, AuthResponse>(ApiService.REGISTRATION_URL)
+  
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phone_number: '',
     role: 'resident' as 'resident' | 'staff'
   })
   const [showPassword, setShowPassword] = useState(false)
@@ -26,60 +38,110 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
     e.preventDefault()
     setError('')
 
-    // Validation
+    // Client-side validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
+      toast.error('Passwords do not match')
       return
     }
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters')
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
+    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+      setError('First name and last name are required')
+      toast.error('First name and last name are required')
       return
     }
 
     setIsLoading(true)
 
     try {
-      // Development mode - simulate API response  
-      if (process.env.NODE_ENV === 'development') {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Mock successful signup
-        const mockUserData = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: formData.name,
-          email: formData.email,
-          role: formData.role
+      // Prepare data for API (match Django's actual User model)
+      const registrationData: any = {
+        // No username field - your model uses email as USERNAME_FIELD
+        email: formData.email.trim(),
+        password1: formData.password,
+        password2: formData.confirmPassword,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        phone_number: formData.phone_number.trim() || "",
+        role: formData.role
+      }
+
+      // Only add location fields if user is staff (since model allows blank=True)
+      if (formData.role === 'staff') {
+        registrationData.employee_id = "TEMP_ID" // Will be updated later
+        registrationData.department = "General"
+        registrationData.ward = ""
+        registrationData.constituency = ""
+        registrationData.county = "Nairobi"
+      }
+
+      console.log('Registration data being sent:', registrationData) // Debug log
+
+      // Only add these fields for staff users
+      if (formData.role === 'staff') {
+        registrationData.ward = "Unknown"
+        registrationData.constituency = "Unknown"
+        registrationData.county = "Nairobi"
+        registrationData.employee_id = "TEMP_ID"
+        registrationData.department = "General"
+      }
+
+      registerApi.mutate({
+        item: registrationData as any,
+      }, {
+        onSuccess: (data: AuthResponse) => {
+          if (data.access && data.refresh) {
+            // Store tokens and auto-login
+            Cookies.set('accessToken', data.access, { 
+              expires: 1, 
+              secure: true, 
+              sameSite: 'Strict' 
+            })
+            Cookies.set('refreshToken', data.refresh, { 
+              expires: 7, 
+              secure: true, 
+              sameSite: 'Strict' 
+            })
+            
+            // Update auth context
+            login({
+              id: data.user.id.toString(),
+              name: `${data.user.first_name} ${data.user.last_name}`,
+              email: data.user.email,
+              role: data.user.role.name as 'resident' | 'staff'
+            })
+            
+            toast.success('Registration successful! Welcome to CivicNavigator.')
+            onClose()
+          } else {
+            // Email verification required
+            toast.success('Registration successful! Please check your email to verify your account.')
+            onSwitchToLogin()
+          }
+        },
+        onError: (error: any) => {
+          const errorMessage = 
+            error.response?.data?.email?.[0] ||
+            error.response?.data?.password?.[0] ||
+            error.response?.data?.first_name?.[0] ||
+            error.response?.data?.last_name?.[0] ||
+            error.response?.data?.phone_number?.[0] ||
+            error.response?.data?.non_field_errors?.[0] ||
+            'Registration failed'
+          
+          setError(errorMessage)
+          toast.error(errorMessage)
         }
-        
-        login(mockUserData)
-        onClose()
-        return
-      }
-
-      // Production API call
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role
-        })
       })
-
-      if (response.ok) {
-        const userData = await response.json()
-        login(userData) // Now just pass the userData object  
-        onClose()
-      } else {
-        const errorData = await response.json()
-        setError(errorData.message || 'Signup failed')
-      }
     } catch (err) {
       setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -87,20 +149,37 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Full Name
-        </label>
-        <input
-          id="name"
-          type="text"
-          required
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-          placeholder="Enter your full name"
-          disabled={isLoading}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+            First Name
+          </label>
+          <input
+            id="first_name"
+            type="text"
+            required
+            value={formData.first_name}
+            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+            placeholder="First name"
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+            Last Name
+          </label>
+          <input
+            id="last_name"
+            type="text"
+            required
+            value={formData.last_name}
+            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+            placeholder="Last name"
+            disabled={isLoading}
+          />
+        </div>
       </div>
 
       <div>
@@ -120,6 +199,21 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
       </div>
 
       <div>
+        <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-1">
+          Phone Number (Optional)
+        </label>
+        <input
+          id="phone_number"
+          type="tel"
+          value={formData.phone_number}
+          onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+          placeholder="e.g., +254712345678"
+          disabled={isLoading}
+        />
+      </div>
+
+      <div>
         <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
           Account Type
         </label>
@@ -128,7 +222,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           required
           value={formData.role}
           onChange={(e) => setFormData({ ...formData, role: e.target.value as 'resident' | 'staff' })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
           disabled={isLoading}
         >
           <option value="resident">Resident</option>

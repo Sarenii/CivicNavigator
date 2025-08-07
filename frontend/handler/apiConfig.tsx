@@ -315,37 +315,37 @@ export const AI_SERVICE_HEALTH_URL = `${BASE_URL}/api/v1/ai/health/`;
  * @description Notification channels endpoint.
  * @method GET, POST
  */
-export const NOTIFICATION_CHANNELS_URL = `${BASE_URL}/api/notifications/channels/`;
+export const NOTIFICATION_CHANNELS_URL = `${BASE_URL}/api/v1/notifications/channels/`;
 
 /**
  * @description Notification templates endpoint.
  * @method GET, POST
  */
-export const NOTIFICATION_TEMPLATES_URL = `${BASE_URL}/api/notifications/templates/`;
+export const NOTIFICATION_TEMPLATES_URL = `${BASE_URL}/api/v1/notifications/templates/`;
 
 /**
  * @description Notification rules endpoint.
  * @method GET, POST
  */
-export const NOTIFICATION_RULES_URL = `${BASE_URL}/api/notifications/rules/`;
+export const NOTIFICATION_RULES_URL = `${BASE_URL}/api/v1/notifications/rules/`;
 
 /**
  * @description Notifications endpoint.
  * @method GET, POST
  */
-export const NOTIFICATIONS_URL = `${BASE_URL}/api/notifications/notifications/`;
+export const NOTIFICATIONS_URL = `${BASE_URL}/api/v1/notifications/notifications/`;
 
 /**
  * @description Notification preferences endpoint.
  * @method GET, POST
  */
-export const NOTIFICATION_PREFERENCES_URL = `${BASE_URL}/api/notifications/preferences/`;
+export const NOTIFICATION_PREFERENCES_URL = `${BASE_URL}/api/v1/notifications/preferences/`;
 
 /**
  * @description Notification digests endpoint.
  * @method GET, POST
  */
-export const NOTIFICATION_DIGESTS_URL = `${BASE_URL}/api/notifications/digests/`;
+export const NOTIFICATION_DIGESTS_URL = `${BASE_URL}/api/v1/notifications/digests/`;
 
 // ==================================================================================
 // Staff Endpoints

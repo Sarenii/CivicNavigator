@@ -1,38 +1,19 @@
 'use client'
+
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'
+import { Message, ChatInterfaceProps, ChatRequest } from '../../../types'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
-
-export interface Citation {
-  title: string
-  snippet: string
-  source_link?: string
-}
-
-export interface Message {
-  id: string
-  text: string
-  sender: 'user' | 'bot'
-  timestamp: Date
-  citations?: Citation[]
-  confidence?: number
-  isTyping?: boolean
-}
-
-interface ChatInterfaceProps {
-  chatId: string
-  onTitleUpdate?: (title: string) => void
-}
 
 export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfaceProps) {
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your CivicNavigator assistant. I can help you find information about municipal services, report incidents, or check the status of existing reports. What would you like to know?',
+      text: 'Hello! I\'m your CitizenNavigator assistant. I can help you find information about municipal services, report incidents, or check the status of existing reports. What would you like to know?',
       sender: 'bot',
       timestamp: new Date(),
       confidence: 1.0
@@ -166,17 +147,19 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
       }
 
       // Production API call
+      const chatRequest: ChatRequest = {
+        message: text,
+        conversation_id: 'current-session', // TODO: Implement proper session management
+        user_id: user?.id
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user?.id}` // Assuming JWT token
         },
-        body: JSON.stringify({
-          message: text,
-          conversation_id: 'current-session', // TODO: Implement proper session management
-          user_id: user?.id
-        })
+        body: JSON.stringify(chatRequest)
       })
 
       if (response.ok) {
@@ -226,7 +209,7 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
               <ChatBubbleLeftRightIcon className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CivicNavigator</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CitizenNavigator</h2>
             <p className="text-gray-600 max-w-md mx-auto">Ask me anything about municipal services, report issues, or check incident status.</p>
           </div>
         )}

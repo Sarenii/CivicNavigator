@@ -10,7 +10,6 @@ import { toast } from 'sonner'
 import { AuthResponse } from '../../../types'
 import Cookies from 'js-cookie'
 
-
 interface LoginFormProps {
   onSwitchToSignup: () => void
   onClose: () => void
@@ -29,12 +28,33 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Development mode - quick test login
+  const handleTestLogin = (testRole: 'resident' | 'staff') => {
+    const mockUser = {
+      id: '1',
+      name: testRole === 'staff' ? 'John Staff' : 'Jane Resident',
+      email: testRole === 'staff' ? 'staff@test.com' : 'resident@test.com',
+      role: testRole
+    }
+    
+    login(mockUser)
+    toast.success(`Logged in as ${testRole}`)
+    onClose()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
 
     try {
+      // Development mode - use mock login if no email/password
+      if (process.env.NODE_ENV === 'development' && (!formData.email || !formData.password)) {
+        await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API delay
+        handleTestLogin(formData.role)
+        return
+      }
+
       loginApi.mutate({
         item: formData as any,
       }, {
@@ -80,6 +100,30 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Development Mode Quick Login */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <h4 className="text-sm font-medium text-yellow-800 mb-2">Development Mode - Quick Login</h4>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => handleTestLogin('resident')}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+            >
+              Login as Resident
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTestLogin('staff')}
+              className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+            >
+              Login as Staff
+            </button>
+          </div>
+          <p className="text-xs text-yellow-600 mt-2">Or fill the form below for real login</p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           Email Address
@@ -87,11 +131,10 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
         <input
           id="email"
           type="email"
-          required
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-          placeholder="Enter your email"
+          placeholder="Enter your email (optional in dev mode)"
           disabled={isLoading}
         />
       </div>
@@ -104,11 +147,10 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
           <input
             id="password"
             type={showPassword ? 'text' : 'password'}
-            required
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-            placeholder="Enter your password"
+            placeholder="Enter your password (optional in dev mode)"
             disabled={isLoading}
           />
           <button

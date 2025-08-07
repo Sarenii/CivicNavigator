@@ -3,10 +3,10 @@ import ProtectedRoute from '@/components/common/ProtectedRoute'
 
 export default function ChatPage() {
   return (
-    <ProtectedRoute>
+
       <div className="h-screen -m-4"> {/* Remove container padding for full-screen */}
         <ChatLayout />
       </div>
-    </ProtectedRoute>
+    
   )
 }

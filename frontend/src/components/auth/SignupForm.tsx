@@ -117,7 +117,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
               role: data.user.role.name as 'resident' | 'staff'
             })
             
-            toast.success('Registration successful! Welcome to CivicNavigator.')
+            toast.success('Registration successful! Welcome to CitizenNavigator.')
             onClose()
           } else {
             // Email verification required

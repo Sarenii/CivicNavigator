@@ -229,3 +229,107 @@ export interface ReportGenerationData {
   report_format: string;
   report_params?: any;
 }
+// types/staff.ts
+
+import { IncidentDetail, IncidentStatus, IncidentCategory } from './incident'
+
+// ===============================
+// Staff Incident Management Types
+// ===============================
+
+export interface StaffIncidentFilter {
+  status?: IncidentStatus[]
+  category?: IncidentCategory[]
+  assigned_to?: string
+  date_from?: string
+  date_to?: string
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  search?: string
+}
+
+export interface IncidentUpdateData {
+  status?: IncidentStatus
+  notes?: string
+  assigned_to?: string
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+  resolution_notes?: string
+}
+
+export interface StaffMember {
+  id: string
+  name: string
+  email: string
+  department: string
+  is_active: boolean
+}
+
+export interface IncidentListItem extends IncidentDetail {
+  assigned_to_name?: string
+  days_open: number
+  is_overdue: boolean
+}
+
+// ===============================
+// Component Props
+// ===============================
+
+export interface StaffIncidentListProps {
+  incidents: IncidentListItem[]
+  isLoading: boolean
+  onIncidentSelect: (incident: IncidentListItem) => void
+  onStatusUpdate: (incidentId: string, updates: IncidentUpdateData) => void
+  filter: StaffIncidentFilter
+  onFilterChange: (filter: StaffIncidentFilter) => void
+}
+
+export interface IncidentDetailViewProps {
+  incident: IncidentListItem | null
+  isOpen: boolean
+  onClose: () => void
+  onUpdate: (updates: IncidentUpdateData) => void
+  isUpdating: boolean
+}
+
+export interface IncidentFilterBarProps {
+  filter: StaffIncidentFilter
+  onFilterChange: (filter: StaffIncidentFilter) => void
+  onClearFilters: () => void
+}
+
+// ===============================
+// API Response Types
+// ===============================
+
+export interface StaffIncidentResponse {
+  results: IncidentListItem[]
+  count: number
+  next: string | null
+  previous: string | null
+}
+
+export interface IncidentUpdateResponse {
+  success: boolean
+  incident: IncidentListItem
+  message: string
+}
+
+/**
+ * Represents a full Knowledge Base article document.
+ * This is the source of truth, matching the backend model.
+ */
+export interface KBArticle {
+  id: string;
+  title: string;
+  body: string;
+  tags: string[];
+  source: string;
+  last_updated: string;
+}
+
+/**
+ * Represents the data required to create or update a KB article.
+ * Used as the payload for POST/PUT API requests.
+ */
+export type KBArticlePayload = Omit<KBArticle, 'id' | 'last_updated'> & {
+  id?: string; // ID is optional, present for updates but not for creation
+};

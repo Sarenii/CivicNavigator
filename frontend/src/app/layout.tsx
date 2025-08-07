@@ -5,7 +5,7 @@ import Layout from '@/components/common/Layout'
 import Providers from '@/components/utils/providers'
 
 export const metadata: Metadata = {
-  title: 'CivicNavigator',
+  title: 'CitizenNavigator',
   description: 'Municipal services chatbot and incident reporting system',
 }
 
@@ -28,3 +28,12 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+
+
+
+
+
+
+

@@ -1,12 +1,8 @@
 'use client'
+
 import { useState, useRef } from 'react'
 import { PaperAirplaneIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
-
-interface ChatInputProps {
-  onSendMessage: (message: string) => void
-  disabled?: boolean
-  isFirstMessage?: boolean
-}
+import { ChatInputProps } from '../../../types'
 
 export default function ChatInput({ onSendMessage, disabled = false, isFirstMessage = false }: ChatInputProps) {
   const [input, setInput] = useState('')

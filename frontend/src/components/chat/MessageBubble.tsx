@@ -1,11 +1,8 @@
 'use client'
-import { Message } from './ChatInterface'
+
+import { MessageBubbleProps } from '../../../types'
 import CitationList from './CitationList'
 import { UserIcon, CpuChipIcon } from '@heroicons/react/24/outline'
-
-interface MessageBubbleProps {
-  message: Message
-}
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.sender === 'user'

@@ -1,6 +1,7 @@
 'use client'
+
 import { useState } from 'react'
-import { Citation } from './ChatInterface'
+import { Citation, CitationListProps } from '../../../types'
 import { LinkIcon } from '@heroicons/react/24/outline'
 
 interface InlineCitationProps {
@@ -58,10 +59,6 @@ function InlineCitation({ citation, index }: InlineCitationProps) {
       )}
     </span>
   )
-}
-
-interface CitationListProps {
-  citations: Citation[]
 }
 
 export default function CitationList({ citations }: CitationListProps) {

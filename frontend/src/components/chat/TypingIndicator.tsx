@@ -13,7 +13,7 @@ export default function TypingIndicator() {
         {/* Typing Animation */}
         <div className="bg-gray-100 rounded-lg px-4 py-3 border border-gray-200">
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-600">CivicNavigator is typing</span>
+            <span className="text-sm text-gray-600">CitizenNavigator is typing</span>
             <div className="flex gap-1 ml-2">
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>

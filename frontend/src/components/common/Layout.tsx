@@ -1,9 +1,11 @@
+// components/common/Layout.tsx
+
 'use client'
 import { useEffect, useState } from 'react'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   HomeIcon,
@@ -15,16 +17,49 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline'
 import AuthModal from './AuthModal'
+import NotificationsDropdown from './Notifications'
+import { useNotifications } from '@/hooks/useNotifications'
+import { Notification } from '../../../types'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { user, logout, login } = useAuth()
+  const { user, logout } = useAuth()
+  const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const pathname = usePathname()
+
+  // Notifications hook
+  const {
+    notifications = [], // Default to empty array
+    unreadCount = 0,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    fetchNotifications,
+    addNotification
+  } = useNotifications()
+
+  // Handle notification click
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read when clicked
+    if (!notification.read) {
+      markAsRead(notification.id)
+    }
+    
+    // Navigate to action URL if available
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl)
+    }
+    
+    // Close dropdown
+    setShowNotifications(false)
+  }
 
   // Accessibility setup for development
   useEffect(() => {
@@ -37,27 +72,36 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [])
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setShowMobileMenu(false)
+  }, [pathname])
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-blue-900 text-white p-4 shadow-sm" role="navigation">
-        <div className="container mx-auto flex justify-between items-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
+      <nav className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-xl border-b border-blue-700/50" role="navigation">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
           <Link 
             href="/" 
-            className="text-xl font-bold hover:text-blue-200 transition-colors"
-            aria-label="CivicNavigator home"
+              className="text-xl font-bold hover:text-blue-200 transition-colors flex items-center gap-2"
+              aria-label="CitizenNavigator home"
           >
-            CivicNavigator
+              <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                <HomeIcon className="w-5 h-5" />
+              </div>
+              CitizenNavigator
           </Link>
           
-          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
             {/* Navigation Links with Icons & Active States */}
             <div className="hidden md:flex items-center gap-1">
               <Link 
                 href="/"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/' 
-                    ? 'bg-blue-800 text-white shadow-lg' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                      ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm' 
+                      : 'text-blue-100 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                 }`}
                 aria-label="Navigate to homepage"
               >
@@ -67,10 +111,10 @@ export default function Layout({ children }: LayoutProps) {
               
               <Link 
                 href="/chat"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/chat' 
-                    ? 'bg-blue-800 text-white shadow-lg' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                      ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm' 
+                      : 'text-blue-100 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                 }`}
                 aria-label="Chat with assistant"
               >
@@ -80,10 +124,10 @@ export default function Layout({ children }: LayoutProps) {
               
               <Link 
                 href="/report"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/report' 
-                    ? 'bg-blue-800 text-white shadow-lg' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                      ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm' 
+                      : 'text-blue-100 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                 }`}
                 aria-label="Report an incident"
               >
@@ -93,10 +137,10 @@ export default function Layout({ children }: LayoutProps) {
               
               <Link 
                 href="/status"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/status' 
-                    ? 'bg-blue-800 text-white shadow-lg' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                      ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm' 
+                      : 'text-blue-100 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                 }`}
                 aria-label="Check incident status"
               >
@@ -104,13 +148,14 @@ export default function Layout({ children }: LayoutProps) {
                 <span>Status</span>
               </Link>
               
+                {/* Staff Dashboard - Only show for staff users */}
               {user?.role === 'staff' && (
                 <Link 
                   href="/staff"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
                     pathname === '/staff' 
-                      ? 'bg-blue-800 text-white shadow-lg' 
-                      : 'text-blue-100 hover:text-white hover:bg-blue-800'
+                        ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm' 
+                        : 'text-blue-100 hover:text-white hover:bg-white/10 backdrop-blur-sm'
                   }`}
                   aria-label="Staff dashboard"
                 >
@@ -120,27 +165,37 @@ export default function Layout({ children }: LayoutProps) {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <button
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="text-blue-100 hover:text-white p-2 rounded-lg hover:bg-blue-800 transition-colors"
-                aria-label="Toggle mobile menu"
-              >
-                <Bars3Icon className="w-6 h-6" />
-              </button>
+              {/* User Info & Notifications */}
+              {user ? (
+                <div className="flex items-center gap-2">
+                  {/* Notifications */}
+                  <NotificationsDropdown
+                    notifications={notifications}
+                    isOpen={showNotifications}
+                    onToggle={() => setShowNotifications(!showNotifications)}
+                    onClose={() => setShowNotifications(false)}
+                    onMarkAsRead={markAsRead}
+                    onMarkAllAsRead={markAllAsRead}
+                    onDeleteNotification={deleteNotification}
+                    onNotificationClick={handleNotificationClick}
+                  />
+
+                  {/* User Info */}
+                  <div className="hidden lg:flex items-center gap-3 px-3 py-2 bg-white/10 rounded-xl backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-white">{user.name}</div>
+                      <div className="text-xs text-blue-200 capitalize">{user.role}</div>
+                    </div>
             </div>
 
-            {/* User Info & Auth */}
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm hidden lg:block">
-                  {user.name} 
-                  <span className="text-blue-300">({user.role})</span>
-                </span>
                 <button
                   onClick={logout}
-                  className="text-sm bg-blue-800 px-3 py-1 rounded hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all duration-200 backdrop-blur-sm font-medium text-sm shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50"
                   aria-label="Logout"
                 >
                   Logout
@@ -149,28 +204,44 @@ export default function Layout({ children }: LayoutProps) {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="text-sm bg-green-600 px-4 py-2 rounded hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300"
-                aria-label="Login to CivicNavigator"
+                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-300"
+                  aria-label="Login to CitizenNavigator"
               >
                 Login
               </button>
             )}
+
+              {/* Mobile Menu Button */}
+              <div className="md:hidden">
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="text-blue-100 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-all duration-200 backdrop-blur-sm"
+                  aria-label="Toggle mobile menu"
+                >
+                  {showMobileMenu ? (
+                    <XMarkIcon className="w-6 h-6" />
+                  ) : (
+                    <Bars3Icon className="w-6 h-6" />
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
       
       {/* Mobile Menu Dropdown */}
       {showMobileMenu && (
-        <div className="md:hidden bg-blue-800 border-t border-blue-700 shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <div className="space-y-1">
+        <div className="md:hidden bg-gradient-to-r from-blue-800 to-indigo-800 border-t border-blue-700/50 shadow-2xl backdrop-blur-xl">
+          <div className="container mx-auto px-4 py-4">
+            <div className="space-y-2">
               <Link 
                 href="/"
                 onClick={() => setShowMobileMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/' 
-                    ? 'bg-blue-700 text-white' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                    ? 'bg-white/20 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <HomeIcon className="w-5 h-5" />
@@ -180,10 +251,10 @@ export default function Layout({ children }: LayoutProps) {
               <Link 
                 href="/chat"
                 onClick={() => setShowMobileMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/chat' 
-                    ? 'bg-blue-700 text-white' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                    ? 'bg-white/20 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <ChatBubbleLeftRightIcon className="w-5 h-5" />
@@ -193,10 +264,10 @@ export default function Layout({ children }: LayoutProps) {
               <Link 
                 href="/report"
                 onClick={() => setShowMobileMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/report' 
-                    ? 'bg-blue-700 text-white' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                    ? 'bg-white/20 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <ExclamationTriangleIcon className="w-5 h-5" />
@@ -206,36 +277,59 @@ export default function Layout({ children }: LayoutProps) {
               <Link 
                 href="/status"
                 onClick={() => setShowMobileMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                   pathname === '/status' 
-                    ? 'bg-blue-700 text-white' 
-                    : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                    ? 'bg-white/20 text-white shadow-lg' 
+                    : 'text-blue-100 hover:text-white hover:bg-white/10'
                 }`}
               >
                 <ClipboardDocumentCheckIcon className="w-5 h-5" />
                 <span>Check Status</span>
               </Link>
               
+              {/* Staff Dashboard Mobile - Only show for staff users */}
               {user?.role === 'staff' && (
                 <Link 
                   href="/staff"
                   onClick={() => setShowMobileMenu(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
                     pathname === '/staff' 
-                      ? 'bg-blue-700 text-white' 
-                      : 'text-blue-100 hover:text-white hover:bg-blue-700'
+                      ? 'bg-white/20 text-white shadow-lg' 
+                      : 'text-blue-100 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <Cog6ToothIcon className="w-5 h-5" />
                   <span>Staff Dashboard</span>
                 </Link>
               )}
+
+              {/* Mobile User Info */}
+              {user && (
+                <div className="mt-4 pt-4 border-t border-blue-700/50">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-white">{user.name}</div>
+                      <div className="text-xs text-blue-200 capitalize">{user.role}</div>
+                    </div>
+                    {unreadCount > 0 && (
+                      <div className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                        {unreadCount}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
       
-      <main className="container mx-auto p-4" role="main">
+      <main className="container mx-auto p-6" role="main">
         {children}
       </main>
 

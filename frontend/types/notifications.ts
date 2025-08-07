@@ -163,4 +163,71 @@ export interface BulkNotificationData {
   priority?: string;
   scheduled_at?: string;
   context_data?: any;
+}// types/notifications.ts
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'update' | 'message'
+
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent'
+
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  type: NotificationType
+  priority: NotificationPriority
+  timestamp: Date
+  read: boolean
+  actionUrl?: string
+  actionLabel?: string
+  metadata?: {
+    incidentId?: string
+    chatId?: string
+    userId?: string
+    [key: string]: any
+  }
+}
+
+export interface NotificationPreferences {
+  userId: string
+  emailNotifications: boolean
+  pushNotifications: boolean
+  smsNotifications: boolean
+  notificationTypes: {
+    incidentUpdates: boolean
+    systemMessages: boolean
+    chatMessages: boolean
+    statusChanges: boolean
+    maintenanceAlerts: boolean
+  }
+}
+
+export interface NotificationComponentProps {
+  notifications: Notification[]
+  onMarkAsRead: (notificationId: string) => void
+  onMarkAllAsRead: () => void
+  onDeleteNotification: (notificationId: string) => void
+  onNotificationClick: (notification: Notification) => void
+}
+
+export interface NotificationBadgeProps {
+  count: number
+  showBadge?: boolean
+  maxCount?: number
+}
+
+export interface NotificationDropdownProps extends NotificationComponentProps {
+  isOpen: boolean
+  onToggle: () => void
+  onClose: () => void
+}
+
+export interface NotificationHookReturn {
+  notifications: Notification[]
+  unreadCount: number
+  isLoading: boolean
+  markAsRead: (notificationId: string) => Promise<void>
+  markAllAsRead: () => Promise<void>
+  deleteNotification: (notificationId: string) => Promise<void>
+  fetchNotifications: () => Promise<void>
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void
 }

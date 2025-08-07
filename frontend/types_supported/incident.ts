@@ -325,4 +325,4 @@ export interface IncidentPerformanceReport {
   department_performance: any[];
 }
 
-import { UserDetails } from "./user";
+import { UserDetails } from "../types/user";

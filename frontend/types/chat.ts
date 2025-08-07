@@ -5,14 +5,26 @@ export interface Citation {
   snippet: string;
   source_link?: string;
 }
-
+/**
+ * Represents a chat message.
+ */
 export interface Message {
-  id: string;
-  text: string;
+  id: number;
   sender: 'user' | 'bot';
-  timestamp: Date;
+  message_type: string;
+  text: string;
   citations?: Citation[];
   confidence?: number;
+  intent?: string;
+  entities?: any;
+  processing_time?: number;
+  ai_model_version?: string;
+  clarification_needed?: boolean;
+  clarification_type?: string;
+  is_helpful?: boolean;
+  feedback_text?: string;
+  created_at: string;
+  updated_at: string;
   isTyping?: boolean;
 }
 

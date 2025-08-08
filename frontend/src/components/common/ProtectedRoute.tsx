@@ -30,7 +30,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     )
   }
 
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && user.role?.name !== requiredRole) {
     return (
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6 text-center">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">

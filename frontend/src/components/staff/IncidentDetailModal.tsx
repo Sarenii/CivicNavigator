@@ -30,7 +30,7 @@ export default function IncidentDetailModal({ incident, onClose, onUpdate }: Inc
     switch (status) {
       case 'NEW': return <ClockIcon className="w-4 h-4 text-blue-600" />
       case 'IN_PROGRESS': return <ExclamationTriangleIcon className="w-4 h-4 text-orange-600" />
-      case 'RESOLVED': return <CheckCircleIcon className="w-4 h-4 text-green-600" />
+      case 'RESOLVED': return <CheckCircleIcon className="w-4 h-4 text-green-700" />
       case 'CLOSED': return <CheckCircleIcon className="w-4 h-4 text-gray-600" />
       default: return <ClockIcon className="w-4 h-4 text-gray-400" />
     }
@@ -233,7 +233,7 @@ export default function IncidentDetailModal({ incident, onClose, onUpdate }: Inc
           {incident.resolution_notes && (
             <div>
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <CheckCircleIcon className="w-4 h-4 text-green-600" />
+                <CheckCircleIcon className="w-4 h-4 text-green-700" />
                 Resolution Notes
               </h3>
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">

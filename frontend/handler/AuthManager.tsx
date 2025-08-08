@@ -1,132 +1,64 @@
-import { api } from '../src/components/utils/api';
-import axios from 'axios';
-import { User } from '../types';
-import Cookies from 'js-cookie';
+import { handleApiError, extractAuthErrorMessage, api } from '../src/components/utils/api';
 import { toast } from 'sonner';
-import { handleApiError } from '../src/components/utils/api';
+import Cookies from 'js-cookie';
 import ApiService from './ApiService';
-
+import { User } from '../types/user';
+import { apiPlain } from '../src/components/utils/api';
 export interface AuthResponse {
   access: string;
   refresh: string;
   user: Partial<User>;
 }
 
-export const apiPlain = axios.create({
-  baseURL: ApiService.BASE_URL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-    // 'Access-Control-Allow-Origin': BASE_URL,
-    // 'Access-Control-Allow-Credentials': 'true',
-  },
-});
-
-// Add request interceptor to include auth token
-apiPlain.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Add response interceptor to handle token refresh
-apiPlain.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        const refreshToken = Cookies.get('refreshToken');
-        if (refreshToken) {
-          const refreshResponse = await axios.post(`${ApiService.BASE_URL}/api/auth/token/refresh/`, {
-            refresh: refreshToken
-          });
-          
-          const { access } = refreshResponse.data;
-          Cookies.set('accessToken', access, { expires: 1 });
-          
-          originalRequest.headers.Authorization = `Bearer ${access}`;
-          return apiPlain(originalRequest);        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        Cookies.remove('accessToken');
-        Cookies.remove('refreshToken');
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-      }
-    }
-    
-    return Promise.reject(error);
-  }
-);
-
 class AuthManager {
   async login(email: string, password: string): Promise<AuthResponse | undefined> {
     try {
-        // Clear tokens synchronously before making the API call
-        Cookies.remove('accessToken');
-        Cookies.remove('refreshToken');
+      const response = await apiPlain.post<AuthResponse>(ApiService.LOGIN_URL, { 
+        email, 
+        password 
+      });
 
-        const response = await apiPlain.post<AuthResponse>(ApiService.LOGIN_URL, { 
-          email, 
-          password 
+      if (response.data) {
+        // Store new tokens after successful login in cookies
+        Cookies.set('accessToken', response.data.access, { 
+          expires: 1, // 1 day expiration
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        Cookies.set('refreshToken', response.data.refresh, { 
+          expires: 7, // 7 days expiration
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
         });
 
-        if (response.data) {
-          // Store new tokens after successful login in cookies
-          Cookies.set('accessToken', response.data.access, { 
-            expires: 1, // 1 day expiration
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
-          });
-          Cookies.set('refreshToken', response.data.refresh, { 
-            expires: 7, // 7 days expiration
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
-          });
-
-          return response.data;
-        }
+        return response.data;
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       
-      // Handle specific Django REST Auth error responses
-      if (error.response?.status === 400) {
-        const errorData = error.response.data;
-        if (errorData.non_field_errors) {
-          throw new Error(errorData.non_field_errors[0] || 'Invalid credentials');
-        } else if (errorData.email) {
-          throw new Error(errorData.email[0] || 'Invalid email format');
-        } else if (errorData.password) {
-          throw new Error(errorData.password[0] || 'Invalid password');
-        }
-      } else if (error.response?.status === 401) {
-        throw new Error('Invalid email or password');
-      } else if (error.response?.status === 403) {
-        throw new Error('Account is deactivated. Contact support.');
-      }
-      
-      throw error;
+      // Use the improved error extraction
+      const errorMessage = extractAuthErrorMessage(error);
+      throw new Error(errorMessage);
     }
   }
 
-  async register(email: string, password1: string, password2: string, role: string): Promise<AuthResponse | undefined> {
+  async register(email: string, password1: string, password2: string, employee_id?: string, department?: string): Promise<AuthResponse | undefined> {
     try {
-      const response = await apiPlain.post<AuthResponse>(ApiService.REGISTRATION_URL, { 
+      const registrationData: any = {
         email, 
         password1, 
-        password2, 
-        role 
-      });
+        password2
+      }
+
+      // Add staff-specific fields if provided
+      if (employee_id) {
+        registrationData.employee_id = employee_id
+      }
+      if (department) {
+        registrationData.department = department
+      }
+
+      const response = await apiPlain.post<AuthResponse>(ApiService.REGISTRATION_URL, registrationData);
       
       if (response.data) {
         // Store new tokens after successful registration in cookies
@@ -144,8 +76,9 @@ class AuthManager {
         return response.data;
       }
     } catch (error) {
-      handleApiError(error);
-      throw error;
+      // Use the improved error extraction
+      const errorMessage = extractAuthErrorMessage(error);
+      throw new Error(errorMessage);
     }
   }
 
@@ -154,7 +87,7 @@ class AuthManager {
       const refreshToken = Cookies.get('refreshToken');
       if (!refreshToken) throw new Error('No refresh token found');
       
-      const response = await apiPlain.post<AuthResponse>(ApiService.TOKEN_REFRESH_URL, { 
+      const response = await api.post<AuthResponse>(ApiService.TOKEN_REFRESH_URL, { 
         refresh: refreshToken 
       });
       
@@ -180,34 +113,33 @@ class AuthManager {
     try {
       const refreshToken = Cookies.get('refreshToken');
       if (refreshToken) {
-        await apiPlain.post(ApiService.LOGOUT_URL, { refresh: refreshToken });
+        await api.post(ApiService.LOGOUT_URL, { refresh: refreshToken });
       }
-      
-      toast.success('Logout successful');
       
       // Remove tokens from cookies
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
-        // Small delay to show toast then redirect
-      setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
-      }, 1000);
+      
+      // Redirect to landing page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     } catch (error) {
       // Even if logout fails on server, clear local tokens
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
       handleApiError(error);
+      
+      // Redirect to landing page even on error
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
   }
 
   async changePassword(new_password1: string, new_password2: string): Promise<void> {
     try {
-      await apiPlain.post(ApiService.PASSWORD_CHANGE_URL, { 
+      await api.post(ApiService.PASSWORD_CHANGE_URL, { 
         new_password1, 
         new_password2 
       });
@@ -220,7 +152,7 @@ class AuthManager {
 
   async resendEmail(email: string): Promise<void> {
     try {
-      await apiPlain.post(ApiService.RESEND_EMAIL_VERIFICATION_URL, { email });
+      await api.post(ApiService.RESEND_EMAIL_VERIFICATION_URL, { email });
       toast.success('Verification email sent successfully');
     } catch (error: any) {
       console.error('Resend email error:', error);
@@ -241,7 +173,7 @@ class AuthManager {
 
   async resetPassword(email: string): Promise<void> {
     try {
-      await apiPlain.post(ApiService.PASSWORD_RESET_URL, { email });
+      await api.post(ApiService.PASSWORD_RESET_URL, { email });
       toast.success('Password reset email sent successfully');
     } catch (error: any) {
       console.error('Reset password error:', error);
@@ -260,7 +192,7 @@ class AuthManager {
   }
   async verifyEmailWithKey(key: string): Promise<void> {
     try {
-      const response = await apiPlain.post(ApiService.VERIFY_EMAIL_URL, { key });
+      const response = await api.post(ApiService.VERIFY_EMAIL_URL, { key });
       toast.success('Email verified successfully!');
       return response.data;
     } catch (error: any) {
@@ -280,7 +212,7 @@ class AuthManager {
 
   async confirmPasswordReset(uid: string, token: string, new_password1: string, new_password2: string): Promise<void> {
     try {
-      await apiPlain.post(ApiService.PASSWORD_RESET_CONFIRM_URL, { 
+      await api.post(ApiService.PASSWORD_RESET_CONFIRM_URL, { 
         uid, 
         token, 
         new_password1, 
@@ -309,7 +241,7 @@ class AuthManager {
 
   async getUser(): Promise<User | undefined> {
     try {
-      const response = await apiPlain.get(ApiService.USER_DETAILS_URL);
+      const response = await api.get(ApiService.USER_DETAILS_URL);
       return response.data;
     } catch (error: any) {
       console.error('Get user error:', error);
@@ -318,14 +250,14 @@ class AuthManager {
       if (error.response?.status === 401) {
         try {
           await this.refreshToken();
-          const retryResponse = await apiPlain.get(ApiService.USER_DETAILS_URL);
+          const retryResponse = await api.get(ApiService.USER_DETAILS_URL);
           return retryResponse.data;        
         } catch (refreshError) {
           // Refresh failed, clear tokens and redirect
           Cookies.remove('accessToken');
           Cookies.remove('refreshToken');
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            window.location.href = '/';
           }
         }
       }
@@ -337,7 +269,7 @@ class AuthManager {
 
   async updateUser(userId: string, formData: FormData): Promise<any> {
     try {
-      const response = await apiPlain.patch(`${ApiService.USER_DETAILS_URL}${userId}/`, formData, {
+      const response = await api.patch(`${ApiService.USER_DETAILS_URL}${userId}/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -353,7 +285,7 @@ class AuthManager {
 
   async deleteUser(userId: string): Promise<void> {
     try {
-      await apiPlain.delete(`${ApiService.USER_DETAILS_URL}${userId}/`);
+      await api.delete(`${ApiService.USER_DETAILS_URL}${userId}/`);
       toast.success('User deleted successfully');
     } catch (error) {
       handleApiError(error);

@@ -27,7 +27,7 @@ export default function IncidentStats({ incidents, user }: IncidentStatsProps) {
         <div className="text-sm text-gray-600">In Progress</div>
       </div>
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
+        <div className="text-2xl font-bold text-green-700">{stats.resolved}</div>
         <div className="text-sm text-gray-600">Resolved</div>
       </div>
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">

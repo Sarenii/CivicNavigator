@@ -19,7 +19,35 @@ export interface UserRole {
   permissions: string[];
 }
 
+/**
+ * Backend role constants to match UserRole.ROLE_CHOICES
+ */
+export const USER_ROLES = {
+  RESIDENT: 'resident',
+  STAFF: 'staff',
+  SUPERVISOR: 'supervisor',
+  ADMIN: 'admin',
+  SUPER_ADMIN: 'super_admin'
+} as const;
 
+export type UserRoleName = typeof USER_ROLES[keyof typeof USER_ROLES];
+
+/**
+ * Role display names to match backend choices
+ */
+export const ROLE_DISPLAY_NAMES = {
+  [USER_ROLES.RESIDENT]: 'Resident',
+  [USER_ROLES.STAFF]: 'Staff Member',
+  [USER_ROLES.SUPERVISOR]: 'Supervisor',
+  [USER_ROLES.ADMIN]: 'Administrator',
+  [USER_ROLES.SUPER_ADMIN]: 'Super Administrator'
+} as const;
+
+/**
+ * Represents user details returned by the backend UserDetailsSerializer.
+ * This matches the fields returned by the backend authentication endpoints.
+ */
+export type UserDetails = User;
 
 
 /**

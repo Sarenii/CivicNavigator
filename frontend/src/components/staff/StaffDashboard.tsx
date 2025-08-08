@@ -27,7 +27,7 @@ export default function StaffDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Only staff members can access this dashboard
-  if (!user || user.role !== 'staff') {
+  if (!user || user.role?.name !== 'staff') {
     return (
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6 text-center">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -159,7 +159,7 @@ export default function StaffDashboard() {
                 </p>
                 <p className="text-sm text-gray-600 flex items-center">
                   <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                  {user.role} • Online
+                  {user.role?.name || 'User'} • Online
                 </p>
               </div>
               <BellIcon className="w-5 h-5 text-gray-400" />

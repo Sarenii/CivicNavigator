@@ -35,7 +35,7 @@ export default function StatusLookup() {
     switch (status) {
       case 'NEW': return 'text-blue-600 bg-blue-100'
       case 'IN_PROGRESS': return 'text-orange-600 bg-orange-100'
-      case 'RESOLVED': return 'text-green-600 bg-green-100'
+      case 'RESOLVED': return 'text-green-700 bg-green-100'
       case 'CLOSED': return 'text-gray-600 bg-gray-100'
       default: return 'text-gray-600 bg-gray-100'
     }

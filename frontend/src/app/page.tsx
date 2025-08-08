@@ -183,7 +183,7 @@ export default function Home() {
               <ClipboardDocumentCheckIcon className="w-8 h-8 text-white" />
             </div>
               
-              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-green-600 transition-colors">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-green-700 transition-colors">
                 Track Progress
               </h3>
               
@@ -191,7 +191,7 @@ export default function Home() {
                 Monitor your submitted reports in real-time with detailed status updates and estimated completion timelines.
               </p>
 
-              <div className="flex items-center gap-2 text-green-600 font-semibold">
+              <div className="flex items-center gap-2 text-green-700 font-semibold">
                 <span>Check status</span>
                 <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>

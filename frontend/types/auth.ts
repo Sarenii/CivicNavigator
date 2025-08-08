@@ -1,14 +1,16 @@
-import { UserDetails } from "./user";
+import { User } from "./user";
 
 /**
  * Represents data for user registration.
  */
 export interface RegisterData {
   email: string;
-  password: string;
+  password1: string;
+  password2: string;
   first_name: string;
   last_name: string;
   phone_number?: string;
+  role?: string;
   ward?: string;
   constituency?: string;
   county?: string;
@@ -26,11 +28,12 @@ export interface LoginData {
 
 /**
  * Represents the JWT token and user details after successful login.
+ * Updated to match the actual backend response structure.
  */
 export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  user: UserDetails;
+  access: string;
+  refresh: string;
+  user: User;
 }
 
 /**

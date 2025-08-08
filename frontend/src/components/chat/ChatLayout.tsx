@@ -279,12 +279,12 @@ export default function ChatLayout() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/25 ring-2 ring-white/80">
               <span className="text-sm font-bold text-white">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-800 truncate">{user?.name}</div>
-              <div className="text-xs text-slate-500 capitalize">{user?.role}</div>
+              <div className="text-sm font-semibold text-slate-800 truncate">{user?.full_name}</div>
+              <div className="text-xs text-slate-500 capitalize">{user?.role.name}</div>
             </div>
             <div className="w-2 h-2 bg-green-400 rounded-full shadow-sm"></div>
           </div>

@@ -1,16 +1,13 @@
-import axios, { AxiosError, AxiosResponse, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie'; // Import js-cookie
 import ApiService from '../../../handler/ApiService';
 import { toast } from "sonner";
+import { AuthResponse } from '../../../types';
+
 interface ApiErrorResponse {
     detail?: string;
     [key: string]: unknown;
-}
-
-interface AuthResponse {
-    access: string;
-    refresh: string;
 }
 
 interface DecodedToken {
@@ -33,6 +30,128 @@ interface ApiError {
   [key: string]: any;
 }
 
+// Helper function to extract authentication error messages
+export const extractAuthErrorMessage = (error: any): string => {
+  if (!error || !error.response) {
+    return 'Network error. Please check your connection.';
+  }
+
+  const { data, status } = error.response;
+
+  // Helper function to extract error message from various Django formats
+  const extractMessage = (data: any): string | null => {
+    // Handle Django REST framework ErrorDetail format
+    if (typeof data === 'string') {
+      // Try to parse JSON first
+      try {
+        const parsed = JSON.parse(data);
+        return extractMessage(parsed);
+      } catch {
+        // Check for ErrorDetail pattern
+        const errorMatch = data.match(/ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)/);
+        if (errorMatch && errorMatch[1]) {
+          return errorMatch[1];
+        }
+        // Check for array of ErrorDetail
+        const arrayMatch = data.match(/\[ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)\]/);
+        if (arrayMatch && arrayMatch[1]) {
+          return arrayMatch[1];
+        }
+        return data;
+      }
+    }
+
+    // Handle object responses
+    if (typeof data === 'object' && data !== null) {
+      // Check for detail field first (common in DRF)
+      if (data.detail) {
+        return String(data.detail);
+      }
+
+      // Check for non_field_errors (Django REST Auth)
+      if (data.non_field_errors && Array.isArray(data.non_field_errors) && data.non_field_errors.length > 0) {
+        return String(data.non_field_errors[0]);
+      }
+
+      // Check for field-specific errors in order of priority
+      const fieldPriority = ['email', 'password', 'password1', 'password2', 'first_name', 'last_name', 'phone_number'];
+      
+      for (const field of fieldPriority) {
+        if (data[field] && Array.isArray(data[field]) && data[field].length > 0) {
+          const firstError = data[field][0];
+          if (typeof firstError === 'string') {
+            return firstError;
+          }
+          if (typeof firstError === 'object' && firstError.detail) {
+            return String(firstError.detail);
+          }
+          // Check for ErrorDetail format in arrays
+          const errorStr = JSON.stringify(firstError);
+          const errorMatch = errorStr.match(/string='([^']+)'/);
+          if (errorMatch && errorMatch[1]) {
+            return errorMatch[1];
+          }
+          return String(firstError);
+        }
+      }
+
+      // Check any other field errors
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value) && value.length > 0) {
+          const firstError = value[0];
+          if (typeof firstError === 'string') {
+            return firstError;
+          }
+          if (typeof firstError === 'object' && firstError.detail) {
+            return String(firstError.detail);
+          }
+          // Check for ErrorDetail format in arrays
+          const errorStr = JSON.stringify(firstError);
+          const errorMatch = errorStr.match(/string='([^']+)'/);
+          if (errorMatch && errorMatch[1]) {
+            return errorMatch[1];
+          }
+          return String(firstError);
+        } else if (value && typeof value === 'string') {
+          return value;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Extract the actual error message
+  const actualErrorMessage = extractMessage(data);
+
+  // Return specific error messages based on status if no actual message found
+  if (actualErrorMessage) {
+    return actualErrorMessage;
+  }
+
+  // Fallback messages based on status codes
+  switch (status) {
+    case 400:
+      return 'Invalid request. Please check your input.';
+    case 401:
+      return 'Invalid email or password.';
+    case 403:
+      return 'Account is deactivated. Contact support.';
+    case 404:
+      return 'Service not found.';
+    case 409:
+      return 'Account already exists with this email.';
+    case 422:
+      return 'Validation error. Please check your input.';
+    case 429:
+      return 'Too many requests. Please wait a moment.';
+    case 500:
+      return 'Server error. Please try again later.';
+    default:
+      return 'An unexpected error occurred.';
+  }
+};
+
 export const handleApiError = (error: any, customMessage?: string) => {
   let errorShown = false;
 
@@ -51,115 +170,153 @@ export const handleApiError = (error: any, customMessage?: string) => {
 
   const { status, data } = error.response;
 
-  // Try to extract ErrorDetail from the entire response text first
-  if (!errorShown) {
-    const responseText = JSON.stringify(data);
-    const errorDetailPattern = /ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)/g;
-    const matches = [...responseText.matchAll(errorDetailPattern)];
-
-    if (matches.length > 0) {
-      toast.error("Error", { description: matches[0][1] });
-      errorShown = true;
-    }
-  }
-
-  // Handle string data that might be a representation of an object
-  if (!errorShown && typeof data === 'string') {
-    try {
-      const parsedData = JSON.parse(data);
-      error.response.data = parsedData; // Update error.response.data for further processing
-    } catch (e) {
-      // If it's not JSON, check if it's a Python-like error format
-      const errorMatch = data.match(/\[ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)\]/);
-      if (errorMatch && errorMatch[1]) {
-        toast.error("Error", { description: errorMatch[1] });
-        errorShown = true;
+  // Helper function to extract error message from various Django formats
+  const extractErrorMessage = (data: any): string | null => {
+    // Handle Django REST framework ErrorDetail format
+    if (typeof data === 'string') {
+      // Try to parse JSON first
+      try {
+        const parsed = JSON.parse(data);
+        return extractErrorMessage(parsed);
+      } catch {
+        // Check for ErrorDetail pattern
+        const errorMatch = data.match(/ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)/);
+        if (errorMatch && errorMatch[1]) {
+          return errorMatch[1];
+        }
+        // Check for array of ErrorDetail
+        const arrayMatch = data.match(/\[ErrorDetail\(string='([^']+)',\s*code='([^']+)'\)\]/);
+        if (arrayMatch && arrayMatch[1]) {
+          return arrayMatch[1];
+        }
+        return data;
       }
     }
-  }
 
-  // Handle different HTTP status codes
-  if (!errorShown) {
-    switch (status) {
-      case 400:
-        if (typeof data === 'object' && data !== null) {
-          for (const [key, value] of Object.entries(data)) {
-            if (errorShown) break;
+    // Handle object responses
+    if (typeof data === 'object' && data !== null) {
+      // Check for detail field first (common in DRF)
+      if (data.detail) {
+        return String(data.detail);
+      }
 
-            if (Array.isArray(value) && value.length > 0) {
-              const valueStr = JSON.stringify(value[0]);
-              const errorMatch = valueStr.match(/string='([^']+)'/);
-              if (errorMatch && errorMatch[1]) {
-                toast.error(`Validation Error: ${key}`, { description: errorMatch[1] });
-                errorShown = true;
-                break;
-              }
+      // Check for non_field_errors (Django REST Auth)
+      if (data.non_field_errors && Array.isArray(data.non_field_errors) && data.non_field_errors.length > 0) {
+        return String(data.non_field_errors[0]);
+      }
 
-              if (typeof value[0] === 'object' && (value[0] as ApiError).detail) {
-                toast.error(`Validation Error: ${key}`, { description: (value[0] as ApiError).detail });
-                errorShown = true;
-                break;
-              } else if (typeof value[0] === 'string') {
-                toast.error(`Validation Error: ${key}`, { description: value[0] });
-                errorShown = true;
-                break;
-              } else if (value[0] !== null) {
-                toast.error(`Validation Error: ${key}`, { description: String(value[0]) });
-                errorShown = true;
-                break;
-              }
-            } else if (value) {
-              toast.error(`Validation Error: ${key}`, { description: String(value) });
-              errorShown = true;
-              break;
-            }
+      // Check for field-specific errors
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value) && value.length > 0) {
+          const firstError = value[0];
+          if (typeof firstError === 'string') {
+            return firstError;
           }
+          if (typeof firstError === 'object' && firstError.detail) {
+            return String(firstError.detail);
+          }
+          // Check for ErrorDetail format in arrays
+          const errorStr = JSON.stringify(firstError);
+          const errorMatch = errorStr.match(/string='([^']+)'/);
+          if (errorMatch && errorMatch[1]) {
+            return errorMatch[1];
+          }
+          return String(firstError);
+        } else if (value && typeof value === 'string') {
+          return value;
         }
-
-        if (!errorShown) {
-          toast.error("Invalid Request", { description: customMessage || (data?.detail) || 'Please check your input.' });
-          errorShown = true;
-        }
-        break;
-
-      case 401:
-        toast.error('Authentication Required', { description: 'Session expired. Please login again.' });
-        errorShown = true;
-        // Consider redirecting to login page or triggering a logout action
-        break;
-
-      case 403:
-        toast.error('Permission Denied', { description: data?.error || 'You do not have permission to perform this action.' });
-        errorShown = true;
-        break;
-
-      case 404:
-        toast.error('Not Found', { description: customMessage || 'The requested resource could not be found.' });
-        errorShown = true;
-        break;
-
-      case 429:
-        toast.error('Too Many Requests', { description: 'You have sent too many requests. Please try again later.' });
-        errorShown = true;
-        break;
-
-      case 500:
-        toast.error('Server Error', { description: 'An internal server error occurred. Please try again later.' });
-        errorShown = true;
-        break;
-
-      default:
-        toast.error('Error', { description: customMessage || (data?.detail) || 'An unexpected error occurred.' });
-        errorShown = true;
+      }
     }
+
+    return null;
+  };
+
+  // Extract the actual error message
+  const actualErrorMessage = extractErrorMessage(data);
+
+  // Handle different HTTP status codes with actual backend messages
+  switch (status) {
+    case 400:
+      if (actualErrorMessage) {
+        toast.error("Validation Error", { description: actualErrorMessage });
+      } else {
+        toast.error("Invalid Request", { description: customMessage || 'Please check your input.' });
+      }
+      break;
+
+    case 401:
+      if (actualErrorMessage) {
+        toast.error("Authentication Error", { description: actualErrorMessage });
+      } else {
+        toast.error('Authentication Required', { description: 'Session expired. Please login again.' });
+      }
+      break;
+
+    case 403:
+      if (actualErrorMessage) {
+        toast.error("Permission Denied", { description: actualErrorMessage });
+      } else {
+        toast.error('Permission Denied', { description: 'You do not have permission to perform this action.' });
+      }
+      break;
+
+    case 404:
+      if (actualErrorMessage) {
+        toast.error("Not Found", { description: actualErrorMessage });
+      } else {
+        toast.error("Not Found", { description: 'The requested resource was not found.' });
+      }
+      break;
+
+    case 409:
+      if (actualErrorMessage) {
+        toast.error("Conflict", { description: actualErrorMessage });
+      } else {
+        toast.error("Conflict", { description: 'The request conflicts with the current state.' });
+      }
+      break;
+
+    case 422:
+      if (actualErrorMessage) {
+        toast.error("Validation Error", { description: actualErrorMessage });
+      } else {
+        toast.error("Validation Error", { description: 'The provided data is invalid.' });
+      }
+      break;
+
+    case 429:
+      toast.error("Too Many Requests", { description: 'Please wait a moment before trying again.' });
+      break;
+
+    case 500:
+      if (actualErrorMessage) {
+        toast.error("Server Error", { description: actualErrorMessage });
+      } else {
+        toast.error("Server Error", { description: 'An internal server error occurred. Please try again later.' });
+      }
+      break;
+
+    case 502:
+    case 503:
+    case 504:
+      toast.error("Service Unavailable", { description: 'The service is temporarily unavailable. Please try again later.' });
+      break;
+
+    default:
+      if (actualErrorMessage) {
+        toast.error("Error", { description: actualErrorMessage });
+      } else {
+        toast.error("Error", { description: customMessage || `An error occurred (${status}).` });
+      }
+      break;
   }
 
-  console.error('API Error Details:', {
+  // Log the full error for debugging
+  console.error('API Error:', {
     status,
     data,
-    endpoint: error.config?.url,
-    method: error.config?.method,
-    originalError: error
+    actualErrorMessage,
+    fullError: error
   });
 };
 
@@ -168,7 +325,9 @@ export const api = axios.create({
     baseURL: ApiService.BASE_URL,
     withCredentials: true, // Include cookies in requests
 });
-
+export const apiPlain = axios.create({
+  baseURL: ApiService.BASE_URL
+});
 // Function to check if a token is expired
 const isTokenExpired = (token: string | undefined): boolean => {
     if (!token) return true;
@@ -202,7 +361,7 @@ api.interceptors.request.use(
         const refreshToken = Cookies.get('refreshToken');
 
         // If access token is expired, try to refresh it
-        if (isTokenExpired(accessToken) && refreshToken) {
+        if (isTokenExpired(accessToken) && refreshToken && !isTokenExpired(refreshToken)) {
             if (!isRefreshing) {
                 isRefreshing = true;
                 try {

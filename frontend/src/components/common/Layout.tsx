@@ -14,19 +14,20 @@ import {
   ClipboardDocumentCheckIcon,
   Cog6ToothIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  BellIcon
 } from '@heroicons/react/24/outline'
 import AuthModal from './AuthModal'
 import NotificationsDropdown from './Notifications'
 import { useNotifications } from '@/hooks/useNotifications'
-import { Notification } from '../../../types'
+import { Notification } from '../../../types/notifications'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
   const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -149,7 +150,7 @@ export default function Layout({ children }: LayoutProps) {
               </Link>
               
                 {/* Staff Dashboard - Only show for staff users */}
-              {user?.role === 'staff' && (
+              {user?.role?.name === 'staff' && (
                 <Link 
                   href="/staff"
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-sm transition-all duration-200 ${
@@ -184,12 +185,12 @@ export default function Layout({ children }: LayoutProps) {
                   <div className="hidden lg:flex items-center gap-3 px-3 py-2 bg-white/10 rounded-xl backdrop-blur-sm">
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
                       <span className="text-sm font-bold text-white">
-                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                        {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-white">{user.name}</div>
-                      <div className="text-xs text-blue-200 capitalize">{user.role}</div>
+                      <div className="text-sm font-medium text-white">{user.full_name}</div>
+                      <div className="text-xs text-blue-200 capitalize">{user.role?.name || 'User'}</div>
                     </div>
             </div>
 
@@ -204,7 +205,7 @@ export default function Layout({ children }: LayoutProps) {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="px-4 py-2 bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-800 hover:to-emerald-800 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-300"
                   aria-label="Login to CitizenNavigator"
               >
                 Login
@@ -288,7 +289,7 @@ export default function Layout({ children }: LayoutProps) {
               </Link>
               
               {/* Staff Dashboard Mobile - Only show for staff users */}
-              {user?.role === 'staff' && (
+              {user?.role?.name === 'staff' && (
                 <Link 
                   href="/staff"
                   onClick={() => setShowMobileMenu(false)}
@@ -309,12 +310,12 @@ export default function Layout({ children }: LayoutProps) {
                   <div className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
                       <span className="text-sm font-bold text-white">
-                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                        {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-white">{user.name}</div>
-                      <div className="text-xs text-blue-200 capitalize">{user.role}</div>
+                      <div className="text-sm font-medium text-white">{user.full_name}</div>
+                      <div className="text-xs text-blue-200 capitalize">{user.role?.name || 'User'}</div>
                     </div>
                     {unreadCount > 0 && (
                       <div className="px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">

@@ -36,7 +36,7 @@ export default function IncidentTable({
     switch (status) {
       case 'NEW': return <ClockIcon className="w-4 h-4 text-blue-600" />
       case 'IN_PROGRESS': return <ExclamationTriangleIcon className="w-4 h-4 text-orange-600" />
-      case 'RESOLVED': return <CheckCircleIcon className="w-4 h-4 text-green-600" />
+      case 'RESOLVED': return <CheckCircleIcon className="w-4 h-4 text-green-700" />
       case 'CLOSED': return <XCircleIcon className="w-4 h-4 text-gray-600" />
       default: return <ClockIcon className="w-4 h-4 text-gray-400" />
     }
@@ -228,7 +228,7 @@ export default function IncidentTable({
                     </button>
                     <button
                       onClick={() => onUpdateIncident(incident)}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-green-700 hover:bg-green-50 transition-colors"
                       title="Update Incident"
                     >
                       <PencilIcon className="w-4 h-4" />

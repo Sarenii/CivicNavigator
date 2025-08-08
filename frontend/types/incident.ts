@@ -1,5 +1,5 @@
 // types/incident.ts
-
+import { Department } from './staff';
 export type IncidentCategory = 
   | 'streetlight' 
   | 'waste' 
@@ -90,12 +90,6 @@ export interface StaffUser {
   assigned_areas: string[]; // List of wards/areas they can manage
 }
 
-export interface Department {
-  id: string;
-  name: string;
-  description?: string;
-  contact_email?: string;
-}
 
 export interface Reporter {
   name?: string;

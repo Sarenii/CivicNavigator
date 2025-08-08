@@ -25,7 +25,7 @@ export interface UserRole {
 /**
  * Represents detailed user information.
  */
-export interface UserDetails {
+export interface User {
   id: number;
   email: string;
   first_name: string;

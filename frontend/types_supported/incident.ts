@@ -159,17 +159,17 @@ export interface IncidentDetail {
   allow_contact: boolean;
   status: string;
   priority: string;
-  assigned_to?: UserDetails;
+  assigned_to?: User;
   assigned_department?: string;
   assigned_at?: string;
   assigned_by?: number;
   acknowledged_at?: string;
   acknowledged_by?: number;
   resolved_at?: string;
-  resolved_by?: UserDetails;
+  resolved_by?: User;
   resolution_notes?: string;
   closed_at?: string;
-  closed_by?: UserDetails;
+  closed_by?: User;
   sla_due_date?: string;
   sla_breached: boolean;
   estimated_resolution_date?: string;
@@ -193,7 +193,7 @@ export interface IncidentDetail {
   age_in_hours: number;
   is_overdue: boolean;
   time_to_resolution?: number;
-  created_by?: UserDetails;
+  created_by?: User;
   created_at: string;
   updated_at: string;
 }
@@ -325,4 +325,4 @@ export interface IncidentPerformanceReport {
   department_performance: any[];
 }
 
-import { UserDetails } from "../types/user";
+import { User } from "../types/user";

@@ -53,10 +53,17 @@ export function useApi<T, U>(url: string, pageSize: number = 10) {
       queryKey: [url, id, params],
       queryFn: async () => {
         const queryString = buildQueryString(params);
-        const response = await api.get<U>(`${url}${id}/${queryString}`);
+        const baseUrl = url.endsWith('/') ? url : `${url}/`;
+        let response;
+        if (id === '') {
+          // When ID is empty, fetch from the base URL (e.g., for a single resource without ID in URL)
+          response = await api.get<U>(`${baseUrl}${queryString}`);
+        } else {
+          response = await api.get<U>(`${baseUrl}${id}/${queryString}`);
+        }
         return response.data;
       },
-      enabled: !!id, // Only fetch if ID exists
+      enabled: id !== null && id !== undefined, // Fetch if ID is not null/undefined (allows empty string)
     });
   };
 const useAddItem = useMutation<
@@ -91,11 +98,21 @@ const useAddItem = useMutation<
 });
 
   // Update Item (Supports Query String)
-  const useUpdateItem = useMutation<U, AxiosError<ApiErrorResponse>, { id: string | number; item: Partial<U>; params?: Record<string, string | number | boolean> }>(
-    {
+  const useUpdateItem = useMutation<U, AxiosError<ApiErrorResponse>, { id: string | number; item: Partial<U> | FormData; params?: Record<string, string | number | boolean> }>
+    ({
       mutationFn: async ({ id, item, params }) => {
         const queryString = buildQueryString(params);
-        const response = await api.patch<U>(`${url}${id}/${queryString}`, item);
+        const baseUrl = url.endsWith('/') ? url : `${url}/`;
+        let response;
+
+        const config = item instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {};
+
+        if (id === '') {
+          // When ID is empty, patch to the base URL
+          response = await api.patch<U>(`${baseUrl}${queryString}`, item, config);
+        } else {
+          response = await api.patch<U>(`${baseUrl}${id}/${queryString}`, item, config);
+        }
         return response.data;
       },
       onSuccess: () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { 
   ChatBubbleLeftRightIcon, 
@@ -13,36 +13,71 @@ import {
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
-import { ChatSession } from '../../../types'
+import { ConversationList, ChatSession } from '../../../types/chat'
+import { useConversationList } from '@/services/chatService'
 import ChatInterface from './ChatInterface'
+import { toast } from 'sonner'
 
 export default function ChatLayout() {
   const { user } = useAuth()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [currentChatId, setCurrentChatId] = useState('1')
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([
-    {
-      id: '1',
-      title: 'Municipal Services Questions',
-      lastMessage: 'Hello! How can I help you today?',
-      timestamp: new Date(),
-      isPinned: false
-    }
-  ])
+  const [currentChatId, setCurrentChatId] = useState<string>('')
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [editingChatId, setEditingChatId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
 
-  const createNewChat = () => {
-    const newChat: ChatSession = {
-      id: Date.now().toString(),
-      title: 'New Conversation',
-      lastMessage: '',
-      timestamp: new Date(),
-      isPinned: false
+  // Fetch conversations from backend
+  const { data: conversationsData, isLoading: isLoadingConversations, error: conversationsError } = useConversationList()
+
+  // Convert backend conversations to frontend format
+  useEffect(() => {
+    if (conversationsData?.results) {
+      const convertedSessions: ChatSession[] = conversationsData.results.map(conv => ({
+        id: conv.session_id,
+        title: conv.title || 'Untitled Conversation',
+        lastMessage: conv.latest_message?.text || 'No messages yet',
+        timestamp: new Date(conv.created_at),
+        isPinned: false // Backend doesn't have pin functionality yet
+      }))
+
+      setChatSessions(convertedSessions)
+      
+      // Set current chat to first conversation if none selected
+      if (!currentChatId && convertedSessions.length > 0) {
+        setCurrentChatId(convertedSessions[0].id)
+      }
+    } else if (conversationsData && Array.isArray(conversationsData)) {
+      // Handle case where backend returns array directly
+      const convertedSessions: ChatSession[] = conversationsData.map(conv => ({
+        id: conv.session_id,
+        title: conv.title || 'Untitled Conversation',
+        lastMessage: conv.latest_message?.text || 'No messages yet',
+        timestamp: new Date(conv.created_at),
+        isPinned: false
+      }))
+
+      setChatSessions(convertedSessions)
+      
+      if (!currentChatId && convertedSessions.length > 0) {
+        setCurrentChatId(convertedSessions[0].id)
+      }
     }
-    setChatSessions(prev => [newChat, ...prev])
-    setCurrentChatId(newChat.id)
+  }, [conversationsData, currentChatId, isLoadingConversations, conversationsError])
+
+  // Handle conversation loading errors
+  useEffect(() => {
+    if (conversationsError) {
+      toast.error('Failed to load conversations', {
+        description: 'Please try refreshing the page.'
+      })
+    }
+  }, [conversationsError])
+
+  const createNewChat = () => {
+    // This will be handled by ChatInterface when user sends first message
+    const newChatId = `new-${Date.now()}`
+    setCurrentChatId(newChatId)
     setRefreshTrigger(prev => prev + 1)
   }
 
@@ -58,7 +93,7 @@ export default function ChatLayout() {
     
     if (currentChatId === chatId) {
       const remainingChats = chatSessions.filter(s => s.id !== chatId)
-      setCurrentChatId(remainingChats[0]?.id || '1')
+      setCurrentChatId(remainingChats[0]?.id || '')
       setRefreshTrigger(prev => prev + 1)
     }
   }
@@ -87,6 +122,14 @@ export default function ChatLayout() {
   const cancelRename = () => {
     setEditingChatId(null)
     setEditTitle('')
+  }
+
+  const handleTitleUpdate = (title: string) => {
+    if (currentChatId) {
+      setChatSessions(prev => 
+        prev.map(s => s.id === currentChatId ? { ...s, title } : s)
+      )
+    }
   }
 
   return (
@@ -169,109 +212,128 @@ export default function ChatLayout() {
         {/* Chat History */}
         <div className="flex-1 overflow-y-auto p-4">
           <h3 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">Recent Conversations</h3>
-          <div className="space-y-2">
-            {chatSessions
-              .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-              .map((session) => (
-              <div
-                key={session.id}
-                className={`group relative rounded-xl transition-all duration-200 ${
-                  currentChatId === session.id 
-                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 shadow-lg shadow-blue-500/10' 
-                    : 'hover:bg-white/80 hover:shadow-md border border-transparent hover:border-slate-200/60'
-                }`}
-              >
-                {editingChatId === session.id ? (
-                  <div className="p-3">
-                    <input
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveRename()
-                        if (e.key === 'Escape') cancelRename()
-                      }}
-                      onBlur={saveRename}
-                      className="w-full bg-white text-slate-900 text-sm px-3 py-2 rounded-lg border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => selectChat(session.id)}
-                    className="w-full text-left p-3 flex items-start gap-3"
-                  >
-                    <div className="flex items-center gap-2">
-                    {session.isPinned && (
-                        <div className="w-2 h-2 bg-amber-400 rounded-full shadow-sm"></div>
-                    )}
-                      <div className={`w-2 h-2 rounded-full ${
-                        currentChatId === session.id ? 'bg-blue-500' : 'bg-slate-300'
-                      }`}></div>
+          
+          {isLoadingConversations ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-16 bg-slate-200 rounded-xl"></div>
+                </div>
+              ))}
+            </div>
+          ) : chatSessions.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-slate-200 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <ChatBubbleLeftRightIcon className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm text-slate-500">No conversations yet</p>
+              <p className="text-xs text-slate-400 mt-1">Start a new chat to begin</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {chatSessions
+                .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+                .map((session) => (
+                <div
+                  key={session.id}
+                  className={`group relative rounded-xl transition-all duration-200 ${
+                    currentChatId === session.id 
+                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 shadow-lg shadow-blue-500/10' 
+                      : 'hover:bg-white/80 hover:shadow-md border border-transparent hover:border-slate-200/60'
+                  }`}
+                >
+                  {editingChatId === session.id ? (
+                    <div className="p-3">
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveRename()
+                          if (e.key === 'Escape') cancelRename()
+                        }}
+                        onBlur={saveRename}
+                        className="w-full bg-white text-slate-900 text-sm px-3 py-2 rounded-lg border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400"
+                        autoFocus
+                      />
                     </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-semibold truncate mb-1 ${
-                        currentChatId === session.id ? 'text-blue-900' : 'text-slate-800'
-                      }`}>
-                        {session.title}
+                  ) : (
+                    <button
+                      onClick={() => selectChat(session.id)}
+                      className="w-full text-left p-3 flex items-start gap-3"
+                    >
+                      <div className="flex items-center gap-2">
+                      {session.isPinned && (
+                          <div className="w-2 h-2 bg-amber-400 rounded-full shadow-sm"></div>
+                      )}
+                        <div className={`w-2 h-2 rounded-full ${
+                          currentChatId === session.id ? 'bg-blue-500' : 'bg-slate-300'
+                        }`}></div>
                       </div>
-                      <div className="text-xs text-slate-500 truncate leading-relaxed">
-                        {session.lastMessage || 'No messages yet'}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-semibold truncate mb-1 ${
+                          currentChatId === session.id ? 'text-blue-900' : 'text-slate-800'
+                        }`}>
+                          {session.title}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate leading-relaxed">
+                          {session.lastMessage || 'No messages yet'}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          {session.timestamp.toLocaleDateString()}
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-400 mt-1">
-                        {session.timestamp.toLocaleDateString()}
-                      </div>
-                    </div>
-                  </button>
-                )}
+                    </button>
+                  )}
 
-                {!editingChatId && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                    <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          togglePin(session.id)
-                        }}
-                        className={`p-2 rounded-md hover:bg-slate-100 transition-colors duration-200 ${
-                          session.isPinned ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'
-                        }`}
-                        title={session.isPinned ? 'Unpin chat' : 'Pin chat'}
-                      >
-                        < StarIcon className="w-3.5 h-3.5" />
-                      </button>
-                      
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          startRename(session.id, session.title)
-                        }}
-                        className="p-2 rounded-md hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors duration-200"
-                        title="Rename chat"
-                      >
-                        <PencilIcon className="w-3.5 h-3.5" />
-                      </button>
-                      
-                      {chatSessions.length > 1 && (
+                  {!editingChatId && (
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                      <div className="flex gap-1 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 p-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if (confirm('Delete this chat? This action cannot be undone.')) {
-                              deleteChat(session.id)
-                            }
+                            togglePin(session.id)
                           }}
-                          className="p-2 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors duration-200"
-                          title="Delete chat"
+                          className={`p-2 rounded-md hover:bg-slate-100 transition-colors duration-200 ${
+                            session.isPinned ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'
+                          }`}
+                          title={session.isPinned ? 'Unpin chat' : 'Pin chat'}
                         >
-                          <TrashIcon className="w-3.5 h-3.5" />
+                          < StarIcon className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startRename(session.id, session.title)
+                          }}
+                          className="p-2 rounded-md hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors duration-200"
+                          title="Rename chat"
+                        >
+                          <PencilIcon className="w-3.5 h-3.5" />
+                        </button>
+                        
+                        {chatSessions.length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (confirm('Delete this chat? This action cannot be undone.')) {
+                                deleteChat(session.id)
+                              }
+                            }}
+                            className="p-2 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors duration-200"
+                            title="Delete chat"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* User Info */}
@@ -284,7 +346,7 @@ export default function ChatLayout() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-slate-800 truncate">{user?.full_name}</div>
-              <div className="text-xs text-slate-500 capitalize">{user?.role.name}</div>
+              <div className="text-xs text-slate-500 capitalize">{user?.role?.name}</div>
             </div>
             <div className="w-2 h-2 bg-green-400 rounded-full shadow-sm"></div>
           </div>
@@ -307,7 +369,7 @@ export default function ChatLayout() {
             )}
             <div className="min-w-0">
               <h1 className="text-lg md:text-xl font-bold text-slate-800 truncate">
-                {chatSessions.find(s => s.id === currentChatId)?.title || 'Chat'}
+                {chatSessions.find(s => s.id === currentChatId)?.title || 'New Chat'}
               </h1>
               <p className="text-sm text-slate-500 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-400 rounded-full"></span>
@@ -330,11 +392,7 @@ export default function ChatLayout() {
           <ChatInterface 
             key={`${currentChatId}-${refreshTrigger}`}
             chatId={currentChatId}
-            onTitleUpdate={(title) => {
-              setChatSessions(prev => 
-                prev.map(s => s.id === currentChatId ? { ...s, title } : s)
-              )
-            }}
+            onTitleUpdate={handleTitleUpdate}
           />
         </div>
       </div>

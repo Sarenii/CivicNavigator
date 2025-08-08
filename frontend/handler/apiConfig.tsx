@@ -155,7 +155,7 @@ export const SOCIAL_AUTH_URLS_URL = `${BASE_URL}/api/v1/accounts/auth/social-url
 export const START_CONVERSATION_URL = `${BASE_URL}/api/v1/chat/start/`;
 
 /**
- * @description Get list of conversations endpoint.
+ * @description Get conversation list endpoint.
  * @method GET
  */
 export const CONVERSATION_LIST_URL = `${BASE_URL}/api/v1/chat/conversations/`;

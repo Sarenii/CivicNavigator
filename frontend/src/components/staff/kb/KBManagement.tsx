@@ -56,9 +56,8 @@ export default function KBManagement() {
       } else {
         if (payload instanceof FormData) {
           await addMutation.mutateAsync(payload)
-        } else {
-          await addMutation.mutateAsync({ item: payload })
         }
+        
         toast.success('Article created')
       }
       setView('list')

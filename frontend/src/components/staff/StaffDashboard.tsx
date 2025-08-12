@@ -155,7 +155,7 @@ export default function StaffDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-lg font-semibold text-gray-900 truncate">
-                  {user.name}
+                  {user.first_name}
                 </p>
                 <p className="text-sm text-gray-600 flex items-center">
                   <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2"></span>

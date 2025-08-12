@@ -1,9 +1,11 @@
 // components/staff/IncidentFilters.tsx
 
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useApi } from '@/hooks/useApi'
+import { INCIDENT_CATEGORIES_URL } from '../../../handler/apiConfig'
 import { MagnifyingGlassIcon, FunnelIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import { IncidentFilter, IncidentStatus, IncidentCategory } from '../../../types'
+import type { IncidentFilter, IncidentStatus, IncidentCategory, IncidentPriority } from '../../../types'
 
 interface IncidentFiltersProps {
   filter: IncidentFilter
@@ -11,140 +13,125 @@ interface IncidentFiltersProps {
   onExport: () => void
 }
 
+interface ApiCategory {
+  id: string;
+  name: string;
+}
+
 export default function IncidentFilters({ filter, setFilter, onExport }: IncidentFiltersProps) {
   const [showFilters, setShowFilters] = useState(false)
+  const [categories, setCategories] = useState<ApiCategory[]>([])
 
-  const availableAreas = [
-    'Nairobi CBD', 'Westlands', 'Karen', 'Kilimani', 'Lavington',
-    'South C', 'South B', 'Embakasi', 'Kasarani', 'Kileleshwa'
-  ]
+  const { useFetchData } = useApi<ApiCategory, any>(INCIDENT_CATEGORIES_URL)
+  const { data: categoriesData, isLoading: isLoadingCategories } = useFetchData(1, { page_size: 100 });
 
-  const activeFilterCount = filter.status.length + filter.category.length + filter.location_area.length
+  useEffect(() => {
+    if (categoriesData?.results) {
+      setCategories(categoriesData.results);
+    }
+  }, [categoriesData]);
+
+  const activeFilterCount = (filter.status?.length || 0) + (filter.category?.length || 0)
+
+  const handleFilterChange = (key: keyof IncidentFilter, value: any) => {
+    setFilter({ ...filter, [key]: value });
+  };
+  
+  const clearFilters = () => {
+    setFilter({ 
+      status: [], 
+      category: [], 
+      priority: [], 
+      assigned_to: [], 
+      department: [], 
+      location_area: [], 
+      search: '', 
+      is_overdue: false, 
+      is_escalated: false 
+    });
+  };
 
   return (
     <div className="space-y-4">
-      {/* Top Bar */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+          className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium"
         >
           <FunnelIcon className="w-4 h-4 text-gray-600" />
-          <span className="text-gray-900">Filters</span>
+          <span>Filters</span>
           {activeFilterCount > 0 && (
-            <span className="ml-1 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-              {activeFilterCount}
-            </span>
+            <span className="ml-1 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">{activeFilterCount}</span>
           )}
         </button>
         <button
           onClick={onExport}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+          className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 font-medium"
         >
           <ArrowDownTrayIcon className="w-4 h-4 text-gray-600" />
-          <span className="text-gray-900">Export</span>
+          <span>Export</span>
         </button>
       </div>
 
-      {/* Search Bar */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"
           placeholder="Search incidents by title or ID..."
           value={filter.search || ''}
-          onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 bg-white"
+          onChange={(e) => handleFilterChange('search', e.target.value)}
+          className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Status */}
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">Status</label>
+              <label className="block text-sm font-semibold mb-2">Status</label>
               <select
-                value={filter.status[0] || ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  status: e.target.value ? [e.target.value as IncidentStatus] : [] 
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                value={filter.status?.[0] || ''}
+                onChange={(e) => handleFilterChange('status', e.target.value ? [e.target.value as IncidentStatus] : [])}
+                className="w-full p-2 border rounded-lg"
               >
-                <option value="" className="text-gray-700">All Statuses</option>
-                <option value="NEW" className="text-gray-900">New</option>
-                <option value="IN_PROGRESS" className="text-gray-900">In Progress</option>
-                <option value="RESOLVED" className="text-gray-900">Resolved</option>
-                <option value="CLOSED" className="text-gray-900">Closed</option>
+                <option value="">All Statuses</option>
+                <option value="NEW">New</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
               </select>
             </div>
-
-            {/* Category */}
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">Category</label>
+              <label className="block text-sm font-semibold mb-2">Category</label>
               <select
-                value={filter.category[0] || ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  category: e.target.value ? [e.target.value as IncidentCategory] : [] 
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                value={filter.category?.[0] || ''}
+                onChange={(e) => handleFilterChange('category', e.target.value ? [e.target.value as IncidentCategory] : [])}
+                className="w-full p-2 border rounded-lg"
+                disabled={isLoadingCategories}
               >
-                <option value="" className="text-gray-700">All Categories</option>
-                <option value="streetlight" className="text-gray-900">Street Lighting</option>
-                <option value="waste" className="text-gray-900">Waste Collection</option>
-                <option value="road" className="text-gray-900">Road Maintenance</option>
-                <option value="water" className="text-gray-900">Water & Sewerage</option>
-                <option value="noise" className="text-gray-900">Noise Complaint</option>
-                <option value="parking" className="text-gray-900">Parking Issues</option>
-                <option value="other" className="text-gray-900">Other</option>
-              </select>
-            </div>
-
-            {/* Area */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">Area</label>
-              <select
-                value={filter.location_area[0] || ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  location_area: e.target.value ? [e.target.value] : [] 
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-              >
-                <option value="" className="text-gray-700">All Areas</option>
-                {availableAreas.map(area => (
-                  <option key={area} value={area} className="text-gray-900">{area}</option>
+                <option value="">{isLoadingCategories ? 'Loading...' : 'All Categories'}</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
-
-            {/* Special */}
-            <div className="space-y-3">
-              <label className="block text-sm font-semibold text-gray-800">Special Filters</label>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filter.is_overdue || false}
-                  onChange={(e) => setFilter({ ...filter, is_overdue: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                />
-                <span className="ml-2 text-sm font-medium text-gray-800">Overdue incidents only</span>
-              </label>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Priority</label>
+              <select
+                value={filter.priority?.[0] || ''}
+                onChange={(e) => handleFilterChange('priority', e.target.value ? [e.target.value as IncidentPriority] : [])}
+                className="w-full p-2 border rounded-lg"
+              >
+                <option value="">All Priorities</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
             </div>
           </div>
-
           <div className="mt-6 flex justify-end">
-            <button
-              onClick={() => setFilter({ 
-                status: [], category: [], priority: [], assigned_to: [], 
-                department: [], location_area: [], search: '', 
-                is_overdue: false, is_escalated: false 
-              })}
-              className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-            >
+            <button onClick={clearFilters} className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg">
               Clear All Filters
             </button>
           </div>

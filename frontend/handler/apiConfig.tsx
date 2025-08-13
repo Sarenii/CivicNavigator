@@ -1,5 +1,6 @@
-export const BASE_URL = "http://localhost:8000";
+// export const BASE_URL = "http://localhost:8000";
 // export const BASE_URL = "https://r7rcfmw2-8000.inc1.devtunnels.ms";
+export const BASE_URL = "https://backend.civicnavigator.great-site.net";
 
 // ==================================================================================
 // Core Endpoints

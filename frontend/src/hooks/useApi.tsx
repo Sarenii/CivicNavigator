@@ -48,7 +48,11 @@ export function useApi<T, U>(url: string, pageSize: number = 10) {
   };
 
   // Fetch a Single Item by ID (Returns Direct Object)
-  const useFetchById = (id: string | number, params?: Record<string, number | string | boolean>) => {
+  const useFetchById = (
+    id: string | number,
+    params?: Record<string, number | string | boolean>,
+    options?: { enabled?: boolean; [key: string]: any }
+  ) => {
     return useQuery<U, AxiosError<ApiErrorResponse>>({
       queryKey: [url, id, params],
       queryFn: async () => {
@@ -63,7 +67,9 @@ export function useApi<T, U>(url: string, pageSize: number = 10) {
         }
         return response.data;
       },
-      enabled: id !== null && id !== undefined, // Fetch if ID is not null/undefined (allows empty string)
+      enabled: options?.enabled !== undefined ? options.enabled : id !== null && id !== undefined,
+      // Spread any additional options if needed
+      ...options,
     });
   };
 const useAddItem = useMutation<

@@ -129,7 +129,7 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
 
       {/* Email Field - Enhanced */}
       <div className="space-y-1 sm:space-y-2">
-        <label htmlFor="email" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+        <label htmlFor="email" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
           Email Address
         </label>
         <div className="relative">
@@ -151,7 +151,7 @@ export default function LoginForm({ onSwitchToSignup, onClose }: LoginFormProps)
 
       {/* Password Field - Enhanced */}
       <div className="space-y-1 sm:space-y-2">
-        <label htmlFor="password" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+        <label htmlFor="password" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
           Password
         </label>
         <div className="relative">

@@ -88,7 +88,7 @@ export default function CitationList({ citations }: CitationListProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <DocumentTextIcon className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-semibold text-gray-700">
+          <span className="text-sm font-semibold text-gray-900">
             Sources & References ({citations.length})
           </span>
         </div>
@@ -127,7 +127,7 @@ export default function CitationList({ citations }: CitationListProps) {
                     {citation.title}
                   </h4>
                   {citation.source_link && citation.source_link !== '#' && (
-                    <p className="text-xs text-gray-500 truncate mt-1">
+                    <p className="text-xs text-gray-700 truncate mt-1">
                       {citation.source_link}
                     </p>
                   )}
@@ -165,7 +165,7 @@ export default function CitationList({ citations }: CitationListProps) {
 
               {/* Citation Content */}
               <div className="mt-2">
-                <p className={`text-sm text-gray-700 leading-relaxed ${
+                <p className={`text-sm text-gray-900 leading-relaxed ${
                   isExpanded ? '' : 'line-clamp-2'
                 }`}>
                   {citation.snippet}
@@ -189,7 +189,7 @@ export default function CitationList({ citations }: CitationListProps) {
 
               {/* Citation Metadata */}
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-700">
                   <span>
                     {isValidCitation ? '✓ Valid source' : '⚠ Incomplete source'}
                   </span>

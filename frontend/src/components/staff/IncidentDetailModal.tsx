@@ -37,7 +37,7 @@ export default function IncidentDetailModal({ incident, onClose, onSwitchToUpdat
       {displayIncident && !isLoading && (
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h1 className="text-2xl font-bold">{displayIncident.title}</h1>
-          <p className="text-gray-500">{displayIncident.incident_id}</p>
+          <p className="text-gray-700">{displayIncident.incident_id}</p>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold">Status</h3>

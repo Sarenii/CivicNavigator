@@ -41,7 +41,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
   // Get confidence color using utility
   const getConfidenceColor = (confidence?: number) => {
-    if (!confidence) return 'text-gray-500'
+    if (!confidence) return 'text-gray-700'
     return MessageUtils.getConfidenceColor(confidence)
   }
 
@@ -172,7 +172,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
           {/* Message Metadata */}
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200/20">
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center gap-3 text-xs text-gray-700">
               <span>{getTimestamp()}</span>
               
               {/* Intent */}

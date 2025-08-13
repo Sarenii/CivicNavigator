@@ -90,7 +90,7 @@ export default function ChatAnalytics({
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Chat Analytics</h3>
-            <p className="text-sm text-gray-500">Conversation insights and performance metrics</p>
+            <p className="text-sm text-gray-700">Conversation insights and performance metrics</p>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export default function ChatAnalytics({
                       className="w-8 bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
                       style={{ height: `${height}%` }}
                     ></div>
-                    <span className="text-xs text-gray-500 mt-2">
+                    <span className="text-xs text-gray-700 mt-2">
                       {new Date(trendData.dates[index]).toLocaleDateString('en-US', { 
                         month: 'short', 
                         day: 'numeric' 
@@ -205,14 +205,14 @@ export default function ChatAnalytics({
             <div className="space-y-3">
               {analytics.resolution_types && Object.entries(analytics.resolution_types).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 capitalize">
+                  <span className="text-sm text-gray-900 capitalize">
                     {type.replace('_', ' ')}
                   </span>
                   <span className="text-sm font-semibold text-gray-900">{count as number}</span>
                 </div>
               ))}
               {(!analytics.resolution_types || Object.keys(analytics.resolution_types).length === 0) && (
-                <p className="text-sm text-gray-500">No resolution data available</p>
+                <p className="text-sm text-gray-700">No resolution data available</p>
               )}
             </div>
           </div>
@@ -226,14 +226,14 @@ export default function ChatAnalytics({
             <div className="space-y-3">
               {analytics.common_intents && analytics.common_intents.slice(0, 5).map((intent: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 capitalize">
+                  <span className="text-sm text-gray-900 capitalize">
                     {intent.intent.replace('_', ' ')}
                   </span>
                   <span className="text-sm font-semibold text-gray-900">{intent.count}</span>
                 </div>
               ))}
               {(!analytics.common_intents || analytics.common_intents.length === 0) && (
-                <p className="text-sm text-gray-500">No intent data available</p>
+                <p className="text-sm text-gray-700">No intent data available</p>
               )}
             </div>
           </div>

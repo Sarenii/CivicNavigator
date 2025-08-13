@@ -84,7 +84,7 @@ export default function StaffDashboard() {
             </div>
             <div className="bg-gray-50 rounded-xl p-8 text-center">
               <ChartBarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">
+              <p className="text-gray-700 text-lg">
                 Analytics dashboard will be implemented here.
               </p>
             </div>
@@ -99,7 +99,7 @@ export default function StaffDashboard() {
             </div>
             <div className="bg-gray-50 rounded-xl p-8 text-center">
               <Cog6ToothIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">
+              <p className="text-gray-700 text-lg">
                 System settings will be implemented here.
               </p>
             </div>
@@ -136,7 +136,7 @@ export default function StaffDashboard() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">CitizenNavigator</h1>
-                <p className="text-sm text-gray-500">Staff Portal</p>
+                <p className="text-sm text-gray-700">Staff Portal</p>
               </div>
             </div>
             <button
@@ -168,7 +168,7 @@ export default function StaffDashboard() {
 
           {/* Navigation */}
           <nav className="flex-1 p-6 space-y-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-4">
               Main Menu
             </p>
             {navigation.map((item) => {
@@ -186,7 +186,7 @@ export default function StaffDashboard() {
                     w-full flex items-center justify-between p-4 rounded-xl text-left transition-all duration-200 group
                     ${isActive 
                       ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                      : 'text-gray-900 hover:bg-gray-50 hover:text-blue-600'
                     }
                   `}
                 >
@@ -196,7 +196,7 @@ export default function StaffDashboard() {
                       <p className={`font-medium ${isActive ? 'text-white' : 'text-gray-900'}`}>
                         {item.name}
                       </p>
-                      <p className={`text-sm ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                      <p className={`text-sm ${isActive ? 'text-blue-100' : 'text-gray-700'}`}>
                         {item.description}
                       </p>
                     </div>
@@ -221,7 +221,7 @@ export default function StaffDashboard() {
           <div className="p-6 border-t border-gray-200">
             <button
               onClick={logout}
-              className="w-full flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="w-full flex items-center space-x-3 p-3 rounded-xl text-gray-900 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <ArrowRightOnRectangleIcon className="w-5 h-5" />
               <span className="font-medium">Sign out</span>
@@ -255,7 +255,7 @@ export default function StaffDashboard() {
               <div className="hidden md:flex items-center space-x-4">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900">Welcome back!</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-700">
                     {new Date().toLocaleDateString('en-US', { 
                       weekday: 'long', 
                       year: 'numeric', 

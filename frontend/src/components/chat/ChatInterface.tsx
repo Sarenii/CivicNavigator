@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline'
 import { Message, ChatInterfaceProps, CreateConversationRequest, SendMessageRequest } from '../../../types/chat'
-import { useStartConversation, useConversationDetail, useSendMessage } from '@/services/chatService'
+import { useStartConversation, useConversationDetail, useSendMessage, useConversationList } from '@/services/chatService'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
@@ -15,268 +15,176 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string>('')
-  const [conversationState, setConversationState] = useState<any>(null)
-  const [suggestedActions, setSuggestedActions] = useState<string[]>([])
-  const [optimisticMessageId, setOptimisticMessageId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // API hooks
+  // Add this hook to get refetch for the conversation list
+  const { refetch: refetchConversationList } = useConversationList();
+  // Determine if we should enable conversation detail query
+  const shouldFetchConversation = Boolean(currentSessionId && !chatId.startsWith('new-'))
+
+  // API hooks - always call them but conditionally enable
   const startConversationMutation = useStartConversation()
   const sendMessageMutation = useSendMessage(currentSessionId)
   
-  // Fetch conversation details if we have a session ID
+  // Always call useConversationDetail but enable it conditionally
   const { 
     data: conversationData, 
-    isLoading: isLoadingConversation, 
+    isFetching: isLoadingConversation,
     error: conversationError,
     refetch: refetchConversation 
-  } = useConversationDetail(currentSessionId)
-
-  // Handle conversation loading errors
-  useEffect(() => {
-    if (conversationError) {
-      toast.error('Failed to load conversation', {
-        description: 'Please try refreshing the page.'
-      })
-    }
-  }, [conversationError])
+  } = useConversationDetail(currentSessionId, {
+    enabled: shouldFetchConversation
+  })
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
+
+  // Handle conversation loading errors
+  useEffect(() => {
+    if (conversationError && shouldFetchConversation) {
+      console.error('Conversation loading error:', conversationError)
+      toast.error('Failed to load conversation')
+    }
+  }, [conversationError, shouldFetchConversation])
 
   // Load messages when conversation data changes
   useEffect(() => {
     if (conversationData) {
       setMessages(conversationData.messages || [])
-      setConversationState(conversationData.state)
-      
       if (onTitleUpdate && conversationData.title) {
         onTitleUpdate(conversationData.title)
       }
     }
-  }, [conversationData, onTitleUpdate])
+  }, [conversationData])
 
-  // Handle new chat creation
+  // Handle chat ID changes
   useEffect(() => {
-    if (chatId.startsWith('new-') && !currentSessionId) {
-      // This is a new chat, we'll create it when user sends first message
+    if (chatId.startsWith('new-')) {
+      // New chat - reset everything
+      setCurrentSessionId('')
       setMessages([{
         id: 0,
         conversation: 0,
         sender: 'bot',
         message_type: 'text',
-        text: 'Hello! I\'m your CitizenNavigator assistant. I can help you find information about municipal services, report incidents, or check the status of existing reports. What would you like to know?',
+        text: 'Hello! I\'m your CitizenNavigator assistant. I can help you with municipal services, incident reporting, or checking report status. How can I assist you today?',
         confidence: 1.0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }])
-    } else if (!chatId.startsWith('new-') && chatId !== currentSessionId) {
-      // This is an existing conversation
+    } else if (chatId && chatId !== currentSessionId) {
+      // Existing conversation
       setCurrentSessionId(chatId)
     }
   }, [chatId, currentSessionId])
 
-  // Handle suggested actions from AI responses
-  const handleSuggestedAction = useCallback((action: string) => {
-    if (action.includes('📞') || action.includes('Contact')) {
-      // Handle contact actions
-      toast.info('Contact information provided', {
-        description: 'Please use the provided contact details.'
-      })
-    } else if (action.includes('📋') || action.includes('Report')) {
-      // Handle incident reporting
-      toast.info('Incident reporting initiated', {
-        description: 'I\'ll help you create an incident report.'
-      })
-    } else if (action.includes('🔍') || action.includes('Check')) {
-      // Handle status checking
-      toast.info('Status checking initiated', {
-        description: 'I\'ll help you check the status of your reports.'
-      })
-    }
-  }, [])
-
-  // Function to add message to state with proper error handling
-  const addMessageToState = useCallback((message: Message) => {
-    setMessages(prev => {
-      // Check if message already exists to prevent duplicates
-      const exists = prev.some(m => m.id === message.id)
-      if (exists) {
-        return prev
-      }
-      return [...prev, message]
-    })
-  }, [])
-
-  // Function to update message in state
-  const updateMessageInState = useCallback((messageId: number, updates: Partial<Message>) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === messageId ? { ...msg, ...updates } : msg
-      )
-    )
-  }, [])
-
-  // Function to remove optimistic message on error
-  const removeOptimisticMessage = useCallback(() => {
-    if (optimisticMessageId) {
-      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessageId))
-      setOptimisticMessageId(null)
-    }
-  }, [optimisticMessageId])
-
   const sendMessage = async (text: string) => {
     if (!text.trim()) return
 
-    console.log('Sending message:', text)
-    console.log('Current session ID:', currentSessionId)
-    console.log('Chat ID:', chatId)
+    console.log('Sending message:', { text, chatId, currentSessionId })
+    setIsLoading(true)
 
-    // Create optimistic user message
-    const optimisticUserMessage: Message = {
+    // Add user message immediately
+    const userMessage: Message = {
       id: Date.now(),
-      conversation: conversationData?.id || 0,
+      conversation: 0,
       sender: 'user',
       message_type: 'text',
       text: text.trim(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
-
-    // Add user message to UI immediately (optimistic update)
-    addMessageToState(optimisticUserMessage)
-    setOptimisticMessageId(optimisticUserMessage.id)
-    setIsLoading(true)
+    setMessages(prev => [...prev, userMessage])
 
     try {
-      // If this is a new chat, create conversation first
-      if (chatId.startsWith('new-')) {
+      if (chatId.startsWith('new-') || !currentSessionId) {
+        // Create new conversation
         console.log('Creating new conversation...')
         const createRequest: CreateConversationRequest = {
           language: 'en',
           initial_message: text.trim(),
           location_context: {}
         }
-
-        console.log('Create request:', createRequest)
-
         const newConversation = await startConversationMutation.mutateAsync({ 
           item: createRequest 
         })
-        
         console.log('New conversation created:', newConversation)
-        
-        setCurrentSessionId(newConversation.session_id)
-        
-        // Replace optimistic message with actual conversation data
-        if (newConversation.messages) {
-          setMessages(newConversation.messages)
+        await setCurrentSessionId(newConversation.session_id)
+        if (refetchConversationList) {
+          refetchConversationList();
         }
-        
+        // Append bot response to user's message
+        if (newConversation.messages && newConversation.messages.length > 1) {
+          // API returned both user and bot messages, append bot to current
+          await setMessages(prev => [...prev, ...newConversation.messages.slice(1)])
+        } else if (newConversation.messages && newConversation.messages.length === 1) {
+          // Only user message, add default bot reply
+          await setMessages(prev => [...prev, {
+            id: Date.now() + 1,
+            conversation: newConversation.id || 0,
+            sender: 'bot',
+            message_type: 'text',
+            text: 'Thank you for your message. I\'m here to help you with municipal services. What specific assistance do you need?',
+            confidence: 0.9,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+        }
         if (onTitleUpdate && newConversation.title) {
           onTitleUpdate(newConversation.title)
         }
-
-        // Handle suggested actions from new conversation
-        if (newConversation.state?.state_data?.suggested_actions) {
-          setSuggestedActions(newConversation.state.state_data.suggested_actions)
-        }
-        
-        setIsLoading(false)
-        setOptimisticMessageId(null)
-        return
-      }
-
-      // Send message to existing conversation
-      if (currentSessionId) {
-        console.log('Sending message to existing conversation:', currentSessionId)
-        const sendRequest: SendMessageRequest = {
-          text: text.trim(),
-          message_type: 'text'
-        }
-
-        console.log('Send request:', sendRequest)
-
+      } else {
+        // Send message to existing conversation
+        console.log('Sending to existing conversation:', currentSessionId)
+        const sendRequest = new FormData();
+        sendRequest.append('text', text.trim());
+        sendRequest.append('message_type', 'text');
         const response = await sendMessageMutation.mutateAsync({ 
-          item: sendRequest as any
+          item: sendRequest
         })
-        
-        console.log('Send response:', response)
-        
-        // Remove optimistic message and add the actual response
-        removeOptimisticMessage()
-        
-        // Add the AI response to messages
+        console.log('Message sent, response:', response)
+        // Append bot response to user's message
         if (response.message) {
-          addMessageToState(response.message)
+          await setMessages(prev => [...prev, response.message])
         }
-        
-        // Update conversation title if provided
         if (response.conversation?.title && onTitleUpdate) {
-          onTitleUpdate(response.conversation.title)
+          await onTitleUpdate(response.conversation.title)
         }
-
-        // Handle suggested actions
-        if (response.suggested_actions && response.suggested_actions.length > 0) {
-          setSuggestedActions(response.suggested_actions)
-        }
-
-        // Handle incident creation if mentioned
         if (response.conversation?.resolution_type === 'incident_created') {
-          toast.success('Incident report created successfully!', {
-            description: 'Your incident has been logged and will be processed.'
-          })
+          toast.success('Incident report created successfully!')
         }
-
-        // Handle conversation state changes
-        if (response.conversation?.state) {
-          setConversationState(response.conversation.state)
-        }
-
-        // Refetch conversation data to ensure consistency
-        await refetchConversation()
       }
     } catch (error: any) {
       console.error('Error sending message:', error)
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      })
-      
-      // Remove optimistic message on error
-      removeOptimisticMessage()
-      
-      // Show error message
+      setMessages(prev => prev.slice(0, -1))
       const errorMessage: Message = {
-        id: Date.now() + 1,
-        conversation: conversationData?.id || 0,
+        id: Date.now() + 2,
+        conversation: 0,
         sender: 'bot',
         message_type: 'error',
-        text: 'I apologize, but I\'m having trouble processing your request right now. Please try again or contact support if the issue persists.',
+        text: 'I apologize, but I\'m having trouble processing your request. Please try again or contact support if the issue persists.',
         confidence: 0.1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
-      addMessageToState(errorMessage)
-      
-      toast.error('Failed to send message', {
-        description: 'Please try again in a moment.'
-      })
+      setMessages(prev => [...prev, errorMessage])
+      toast.error('Failed to send message. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
   // Show loading state while fetching conversation
-  if (isLoadingConversation && currentSessionId) {
+  if (isLoadingConversation && shouldFetchConversation) {
     return (
       <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
               <ChatBubbleLeftRightIcon className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading conversation...</h2>
@@ -287,13 +195,15 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
     )
   }
 
+  const isFirstMessage = messages.length <= 1 || (messages.length === 1 && messages[0].sender === 'bot')
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-gray-50 to-white">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.length === 0 && !isLoadingConversation && (
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" role="main" aria-label="Chat messages">
+        {messages.length === 0 && (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
               <ChatBubbleLeftRightIcon className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CitizenNavigator</h2>
@@ -307,42 +217,15 @@ export default function ChatInterface({ chatId, onTitleUpdate }: ChatInterfacePr
         
         {isLoading && <TypingIndicator />}
         
-        {/* Suggested Actions */}
-        {suggestedActions.length > 0 && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="text-sm font-semibold text-blue-900 mb-2">Suggested Actions:</h3>
-            <div className="flex flex-wrap gap-2">
-              {suggestedActions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestedAction(action)}
-                  className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs rounded-full transition-colors duration-200"
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Conversation State Information */}
-        {conversationState && conversationState.current_state !== 'completed' && (
-          <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-            <p className="text-sm text-yellow-800">
-              <strong>Status:</strong> {conversationState.expected_input || 'Processing your request...'}
-            </p>
-          </div>
-        )}
-        
         <div ref={messagesEndRef} />
       </div>
 
       {/* Chat Input */}
-      <div className="border-t border-gray-200 bg-white p-6">
+      <div className="border-t border-gray-200 bg-white p-4 md:p-6" role="complementary" aria-label="Message input area">
         <ChatInput 
           onSendMessage={sendMessage} 
-          disabled={isLoading || isLoadingConversation} 
-          isFirstMessage={messages.length <= 1}
+          disabled={isLoading} 
+          isFirstMessage={isFirstMessage}
         />
       </div>
     </div>

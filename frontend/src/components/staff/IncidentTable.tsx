@@ -31,8 +31,8 @@ export default function IncidentTable({
       case 'NEW': return 'bg-blue-50 text-blue-700'
       case 'IN_PROGRESS': return 'bg-orange-50 text-orange-700'
       case 'RESOLVED': return 'bg-green-50 text-green-700'
-      case 'CLOSED': return 'bg-gray-50 text-gray-700'
-      default: return 'bg-gray-50 text-gray-700'
+      case 'CLOSED': return 'bg-gray-50 text-gray-900'
+      default: return 'bg-gray-50 text-gray-900'
     }
   }
 
@@ -62,15 +62,15 @@ export default function IncidentTable({
               <tr key={incident.id} className="hover:bg-gray-50">
                 <td className="px-4 py-4">
                   <div className="text-sm font-semibold text-gray-900">{incident.title}</div>
-                  <div className="text-xs text-gray-500">{incident.incident_id}</div>
+                  <div className="text-xs text-gray-700">{incident.incident_id}</div>
                 </td>
                 <td className="px-3 py-4">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(incident.status)}`}>
                     {incident.status}
                   </span>
                 </td>
-                <td className="px-3 py-4 text-sm text-gray-700">{incident.location_description}</td>
-                <td className="px-3 py-4 text-sm text-gray-700">{incident.assigned_to_name || 'Unassigned'}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{incident.location_description}</td>
+                <td className="px-3 py-4 text-sm text-gray-900">{incident.assigned_to_name || 'Unassigned'}</td>
                 <td className="px-2 py-4 text-right">
                   <div className="flex items-center justify-end gap-1">
                     <button onClick={() => onViewIncident(incident)} className="p-1 rounded-lg hover:bg-blue-50">

@@ -2,21 +2,41 @@
 
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { KnowledgeArticle, KnowledgeArticleCreateData, KnowledgeCategory } from '../../../../types'
+import { KnowledgeArticle, KnowledgeCategory } from '../../../../types'
+import { 
+  DocumentTextIcon, 
+  TagIcon, 
+  StarIcon,
+  EyeIcon,
+  LockClosedIcon,
+  PaperClipIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline'
 
 interface KBArticleFormProps {
-  onSave: (payload: KnowledgeArticleCreateData, id?: number) => void;
+  onSave: (payload: Partial<KnowledgeArticle> | FormData, id?: number) => void | Promise<void>;
   onCancel: () => void;
   articleToEdit: KnowledgeArticle | null;
   categories: KnowledgeCategory[];
   isSaving?: boolean;
+  mode: 'edit' | 'create';
 }
 
-export default function KBArticleForm({ onSave, onCancel, articleToEdit, categories, isSaving }: KBArticleFormProps) {
+export default function KBArticleForm({ 
+  onSave, 
+  onCancel, 
+  articleToEdit, 
+  categories, 
+  isSaving, 
+  mode 
+}: KBArticleFormProps) {
+  const [formError, setFormError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
-  const [category, setCategory] = useState<number | ''>('')
+  const [category, setCategory] = useState<string>('')
   const [articleType, setArticleType] = useState('faq')
   const [status, setStatus] = useState('draft')
   const [metaDescription, setMetaDescription] = useState('')
@@ -26,14 +46,16 @@ export default function KBArticleForm({ onSave, onCancel, articleToEdit, categor
   const [requiresStaffAccess, setRequiresStaffAccess] = useState(false)
   const [attachments, setAttachments] = useState<FileList | null>(null)
 
-  const inputClasses = 'block w-full rounded-xl border border-gray-300 bg-white py-3 px-4 text-base placeholder:text-gray-400 shadow-sm transition duration-150 ease-in-out focus:border-blue-600 focus:ring-2 focus:ring-blue-200'
-
   useEffect(() => {
     if (articleToEdit) {
       setTitle(articleToEdit.title)
       setExcerpt(articleToEdit.excerpt || '')
       setContent(articleToEdit.content)
-      setCategory(articleToEdit.category.id)
+      setCategory(
+        typeof articleToEdit.category === 'object' && articleToEdit.category !== null && 'id' in articleToEdit.category
+          ? String((articleToEdit.category as KnowledgeCategory).id)
+          : ''
+      )
       setArticleType(articleToEdit.article_type)
       setStatus(articleToEdit.status)
       setMetaDescription(articleToEdit.meta_description || '')
@@ -42,25 +64,12 @@ export default function KBArticleForm({ onSave, onCancel, articleToEdit, categor
       setIsPublic(articleToEdit.is_public)
       setRequiresStaffAccess(articleToEdit.requires_staff_access)
       setAttachments(null)
-    } else {
-      setTitle('')
-      setExcerpt('')
-      setContent('')
-      setCategory('')
-      setArticleType('faq')
-      setStatus('draft')
-      setMetaDescription('')
-      setKeywords('')
-      setIsFeatured(false)
-      setIsPublic(true)
-      setRequiresStaffAccess(false)
-      setAttachments(null)
     }
   }, [articleToEdit])
 
   const categoryOptions = useMemo(() => {
     return categories
-      .filter((c) => c.is_active)
+      .filter(c => c.is_active)
       .sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name))
   }, [categories])
 
@@ -69,12 +78,23 @@ export default function KBArticleForm({ onSave, onCancel, articleToEdit, categor
   }
 
   const handleSave = () => {
-    if (!title || !content || !category) return
-    const basePayload: KnowledgeArticleCreateData = {
+    if (!title || !content) {
+      setFormError('Title and content are required.')
+      return
+    }
+    if (category === '') {
+      setFormError('Please select a category.')
+      return
+    }
+    
+    setFormError(null)
+    
+    
+    const basePayload: Partial<KnowledgeArticle> = {
       title,
       excerpt: excerpt || undefined,
       content,
-      category: Number(category),
+      category: category,
       article_type: articleType,
       status,
       meta_description: metaDescription || undefined,
@@ -83,117 +103,307 @@ export default function KBArticleForm({ onSave, onCancel, articleToEdit, categor
       is_public: isPublic,
       requires_staff_access: requiresStaffAccess,
     }
+
     if (attachments && attachments.length > 0) {
       const form = new FormData()
       Object.entries(basePayload).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) form.append(key, String(value))
+        if (value !== undefined && value !== null) {
+          if (key === 'category' && value && typeof value === 'object') {
+            form.append('category', String((value as KnowledgeCategory).id))
+          } else {
+            form.append(key, String(value))
+          }
+        }
       })
-      Array.from(attachments).forEach((file) => form.append('uploaded_attachments', file))
-      onSave(form as unknown as KnowledgeArticleCreateData, articleToEdit?.id)
+      Array.from(attachments).forEach(file => form.append('uploaded_attachments', file))
+      onSave(form as unknown as Partial<KnowledgeArticle>, articleToEdit?.id)
     } else {
       onSave(basePayload, articleToEdit?.id)
     }
   }
 
-  const formTitle = articleToEdit ? 'Edit Article' : 'Add New Article'
+  const inputClasses = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700'
+  const textareaClasses = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-700'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <div className="mb-8">
-        <h4 className="text-2xl font-bold text-gray-900">{formTitle}</h4>
-        <p className="text-gray-500">Fill in article details. Attachments are optional.</p>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-          <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputClasses} />
-        </div>
-
-        <div>
-          <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-2">Excerpt</label>
-          <textarea id="excerpt" rows={3} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} className={inputClasses} placeholder="Short summary shown in lists" />
-        </div>
-
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-          <textarea id="content" rows={12} value={content} onChange={(e) => setContent(e.target.value)} className={inputClasses} placeholder="Markdown supported" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <select id="category" value={category} onChange={(e) => setCategory(e.target.value ? Number(e.target.value) : '')} className={inputClasses}>
-              <option value="">Select category</option>
-              {categoryOptions.map((c) => (
-                <option key={c.id} value={c.id}>{c.full_path || c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">Article Type</label>
-            <select id="type" value={articleType} onChange={(e) => setArticleType(e.target.value)} className={inputClasses}>
-              <option value="faq">FAQ</option>
-              <option value="guide">How-to Guide</option>
-              <option value="procedure">Official Procedure</option>
-              <option value="policy">Policy Document</option>
-              <option value="announcement">Announcement</option>
-              <option value="troubleshooting">Troubleshooting</option>
-            </select>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <DocumentTextIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {mode === 'edit' ? 'Edit Article' : 'Create Article'}
+                </h1>
+                <p className="text-gray-600">
+                  {mode === 'edit' ? 'Update your article content' : 'Create a new knowledge base article'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <XMarkIcon className="w-6 h-6" />
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)} className={inputClasses}>
-              <option value="draft">Draft</option>
-              <option value="review">Under Review</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
+        {/* Error Alert */}
+        {formError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
+              <p className="text-red-800">{formError}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-6 pt-7">
-            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
-              Featured
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-              Public
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" checked={requiresStaffAccess} onChange={(e) => setRequiresStaffAccess(e.target.checked)} />
-              Staff-only
-            </label>
+        )}
+
+        {/* Form */}
+        <div className="space-y-6">
+          {/* Basic Info */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className={inputClasses}
+                  placeholder="Enter article title..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className={inputClasses}
+                  >
+                    <option value="">Select category</option>
+                    {categoryOptions.map(c => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.full_path || c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={articleType}
+                    onChange={(e) => setArticleType(e.target.value)}
+                    className={inputClasses}
+                  >
+                    <option value="faq">FAQ</option>
+                    <option value="guide">Guide</option>
+                    <option value="procedure">Procedure</option>
+                    <option value="policy">Policy</option>
+                    <option value="announcement">Announcement</option>
+                    <option value="troubleshooting">Troubleshooting</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Excerpt
+                </label>
+                <textarea
+                  rows={3}
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                  className={textareaClasses}
+                  placeholder="Brief summary for article previews..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Content *
+                </label>
+                <textarea
+                  rows={12}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className={textareaClasses}
+                  placeholder="Write your article content here..."
+                />
+                <p className="mt-1 text-sm text-gray-700">Markdown formatting supported</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Settings */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className={inputClasses}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="review">Under Review</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <StarIcon className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900">Featured Article</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <EyeIcon className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900">Public Access</span>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={requiresStaffAccess}
+                    onChange={(e) => setRequiresStaffAccess(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <LockClosedIcon className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900">Staff Only</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* SEO & Attachments */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Meta Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    className={textareaClasses}
+                    placeholder="SEO description..."
+                    maxLength={160}
+                  />
+                  <div className="flex justify-between text-sm text-gray-700 mt-1">
+                    <span>For search engines</span>
+                    <span>{metaDescription.length}/160</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Keywords
+                  </label>
+                  <input
+                    type="text"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    className={inputClasses}
+                    placeholder="keyword1, keyword2, keyword3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Attachments</h2>
+              <div>
+                <input
+                  id="attachments"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="attachments"
+                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
+                >
+                  <PaperClipIcon className="w-8 h-8 text-gray-400 mb-2" />
+                  <p className="text-gray-600 font-medium">Upload Files</p>
+                  <p className="text-sm text-gray-700">PDF, images, documents</p>
+                </label>
+              </div>
+              {attachments && attachments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {Array.from(attachments).map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm bg-gray-50 rounded p-2">
+                      <PaperClipIcon className="w-4 h-4 text-gray-400" />
+                      <span className="truncate">{file.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <button
+              onClick={onCancel}
+              disabled={isSaving}
+              className="px-6 py-3 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon className="w-5 h-5" />
+                  Save Article
+                </>
+              )}
+            </button>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="meta" className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
-            <input id="meta" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} className={inputClasses} />
-          </div>
-          <div>
-            <label htmlFor="keywords" className="block text-sm font-medium text-gray-700 mb-2">Keywords (comma-separated)</label>
-            <input id="keywords" value={keywords} onChange={(e) => setKeywords(e.target.value)} className={inputClasses} placeholder="e.g. waste, schedule, services" />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="attachments" className="block text-sm font-medium text-gray-700 mb-2">Attachments</label>
-          <input id="attachments" type="file" multiple onChange={handleFileChange} className="block w-full text-sm text-gray-700" />
-          <p className="mt-2 text-xs text-gray-500">PDF, Office docs, images are supported.</p>
-        </div>
-      </div>
-
-      <div className="mt-8 pt-5 border-t border-gray-200 flex justify-end gap-3">
-        <button type="button" className="px-6 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors" onClick={onCancel} disabled={isSaving}>
-          Cancel
-        </button>
-        <button type="button" className="px-6 py-2.5 rounded-lg bg-blue-600 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Article'}
-        </button>
       </div>
     </div>
   )

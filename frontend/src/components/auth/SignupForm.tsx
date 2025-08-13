@@ -156,7 +156,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
       {/* Name Fields - Enhanced */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="space-y-1 sm:space-y-2">
-          <label htmlFor="first_name" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+          <label htmlFor="first_name" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
             First Name
           </label>
           <div className="relative">
@@ -176,7 +176,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           </div>
         </div>
         <div className="space-y-1 sm:space-y-2">
-          <label htmlFor="last_name" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+          <label htmlFor="last_name" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
             Last Name
           </label>
           <div className="relative">
@@ -199,7 +199,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
 
       {/* Email Field - Enhanced */}
       <div className="space-y-1 sm:space-y-2">
-        <label htmlFor="signup-email" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+        <label htmlFor="signup-email" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
           Email Address
         </label>
         <div className="relative">
@@ -221,8 +221,8 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
 
       {/* Phone Number Field - Enhanced */}
       <div className="space-y-1 sm:space-y-2">
-        <label htmlFor="phone_number" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-          Phone Number <span className="text-gray-500 font-normal">(Optional)</span>
+        <label htmlFor="phone_number" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
+          Phone Number <span className="text-gray-700 font-normal">(Optional)</span>
         </label>
         <div className="relative">
           <input
@@ -242,7 +242,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
 
              {/* Account Type Selection - Enhanced */}
        <div className="space-y-1 sm:space-y-2">
-         <label htmlFor="accountType" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+         <label htmlFor="accountType" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
            Account Type
          </label>
          <div className="relative">
@@ -263,7 +263,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
              </svg>
            </div>
          </div>
-         <p className="text-xs text-gray-500 mt-1">
+         <p className="text-xs text-gray-700 mt-1">
            {formData.accountType === 'staff' 
              ? 'Staff accounts require employee ID and department information.'
              : 'Resident accounts are for general public users.'
@@ -275,7 +275,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
       {formData.accountType === 'staff' && (
         <>
           <div className="space-y-1 sm:space-y-2">
-            <label htmlFor="employee_id" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+            <label htmlFor="employee_id" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
               Employee ID
             </label>
             <div className="relative">
@@ -296,7 +296,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           </div>
 
           <div className="space-y-1 sm:space-y-2">
-            <label htmlFor="department" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+            <label htmlFor="department" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
               Department
             </label>
             <div className="relative">
@@ -317,7 +317,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           </div>
 
           <div className="space-y-1 sm:space-y-2">
-            <label htmlFor="ward" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+            <label htmlFor="ward" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
               Ward
             </label>
             <div className="relative">
@@ -337,7 +337,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           </div>
 
           <div className="space-y-1 sm:space-y-2">
-            <label htmlFor="constituency" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+            <label htmlFor="constituency" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
               Constituency
             </label>
             <div className="relative">
@@ -357,7 +357,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
           </div>
 
           <div className="space-y-1 sm:space-y-2">
-            <label htmlFor="county" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+            <label htmlFor="county" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
               County
             </label>
             <div className="relative">
@@ -381,7 +381,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
       {/* Password Fields - Enhanced */}
       <div className="space-y-3 sm:space-y-4">
         <div className="space-y-1 sm:space-y-2">
-          <label htmlFor="signup-password" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+          <label htmlFor="signup-password" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
             Password
           </label>
           <div className="relative">
@@ -412,7 +412,7 @@ export default function SignupForm({ onSwitchToLogin, onClose }: SignupFormProps
         </div>
 
         <div className="space-y-1 sm:space-y-2">
-          <label htmlFor="confirm-password" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+          <label htmlFor="confirm-password" className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">
             Confirm Password
           </label>
           <div className="relative">

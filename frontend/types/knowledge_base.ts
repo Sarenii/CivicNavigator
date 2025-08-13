@@ -85,7 +85,7 @@ export interface KnowledgeArticle {
   slug: string;
   excerpt?: string;
   content: string;
-  category: KnowledgeCategory;
+  category: KnowledgeCategory | string;
   attachments: KnowledgeAttachment[];
   comments: KnowledgeComment[];
   article_type: string;
@@ -118,7 +118,7 @@ export interface KnowledgeArticleCreateData {
   title: string;
   excerpt?: string;
   content: string;
-  category: number;
+  category: string;
   article_type: string;
   status: string;
   meta_description?: string;

@@ -101,7 +101,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete, onClick }: Not
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <h4 className={`text-sm font-semibold ${
-              notification.read ? 'text-gray-700' : 'text-gray-900'
+              notification.read ? 'text-gray-900' : 'text-gray-900'
             } truncate`}>
               {notification.title}
             </h4>
@@ -112,7 +112,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete, onClick }: Not
           </div>
           
           <p className={`text-sm ${
-            notification.read ? 'text-gray-500' : 'text-gray-700'
+            notification.read ? 'text-gray-700' : 'text-gray-900'
           } mt-1 line-clamp-2`}>
             {notification.message}
           </p>
@@ -248,7 +248,7 @@ export default function NotificationsDropdown({
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <BellIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No notifications yet</p>
+                <p className="text-gray-700 font-medium">No notifications yet</p>
                 <p className="text-gray-400 text-sm mt-1">
                   We'll notify you when something important happens
                 </p>

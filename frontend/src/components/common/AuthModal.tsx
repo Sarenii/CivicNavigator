@@ -134,7 +134,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {/* Enhanced Footer */}
           <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 bg-gradient-to-r from-gray-50 to-blue-50/30 border-t border-gray-100">
             <div className="text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-700">
                 {activeTab === 'login' 
                   ? 'Secure authentication powered by CitizenNavigator'
                   : 'Join thousands of citizens using our platform'
@@ -148,7 +148,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl p-3 sm:p-4 border border-gray-100 hidden sm:block">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <div className="text-xs sm:text-sm font-semibold text-gray-700">Secure & Private</div>
+            <div className="text-xs sm:text-sm font-semibold text-gray-900">Secure & Private</div>
           </div>
         </div>
       </div>

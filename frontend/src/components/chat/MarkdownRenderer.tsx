@@ -37,7 +37,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <strong className="font-semibold text-gray-900">{children}</strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-gray-700">{children}</em>
+            <em className="italic text-gray-900">{children}</em>
           ),
           code: ({ children, className }) => {
             const isInline = !className
@@ -60,7 +60,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             </pre>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 mb-1">
+            <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-900 mb-1">
               {children}
             </blockquote>
           ),

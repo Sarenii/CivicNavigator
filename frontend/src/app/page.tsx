@@ -99,7 +99,7 @@ export default function Home() {
               <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-xl p-4 border border-gray-100">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <div className="text-sm font-semibold text-gray-700">Live 24/7</div>
+                  <div className="text-sm font-semibold text-gray-900">Live 24/7</div>
                 </div>
               </div>
             </div>

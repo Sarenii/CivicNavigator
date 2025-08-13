@@ -184,10 +184,10 @@ export default function StatusLookup() {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <span className="font-medium text-gray-900 capitalize">{entry.status.replace('_', ' ')}</span>
-                        <span className="text-sm text-gray-500">{formatDate(entry.timestamp)}</span>
+                        <span className="text-sm text-gray-700">{formatDate(entry.timestamp)}</span>
                       </div>
-                      <p className="text-gray-700 text-sm">{entry.note}</p>
-                      <p className="text-xs text-gray-500 mt-1">By: {entry.actor}</p>
+                      <p className="text-gray-900 text-sm">{entry.note}</p>
+                      <p className="text-xs text-gray-700 mt-1">By: {entry.actor}</p>
                     </div>
                   </div>
                 ))}
@@ -196,7 +196,7 @@ export default function StatusLookup() {
           )}
 
           <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3">
-            <button onClick={resetSearch} className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            <button onClick={resetSearch} className="px-6 py-3 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50">
               Search Another
             </button>
             <button onClick={() => window.location.href = '/report'} className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

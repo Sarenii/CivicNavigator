@@ -32,9 +32,10 @@ export const useConversationList = (params?: Record<string, string | boolean>) =
 };
 
 // Hook for fetching conversation details
-export const useConversationDetail = (sessionId: string) => {
+export const useConversationDetail = (sessionId: string, params?: Record<string, string | boolean>) => {
   const { useFetchById } = useApi<Conversation, Conversation>(CONVERSATION_DETAIL_URL(sessionId));
-  return useFetchById('');
+  const enabled = !!sessionId && !sessionId.startsWith('new-');
+  return useFetchById('', params, { enabled });
 };
 
 // Hook for sending a message with improved cache invalidation

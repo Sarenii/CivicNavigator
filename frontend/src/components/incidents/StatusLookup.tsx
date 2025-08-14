@@ -88,12 +88,12 @@ export default function IncidentList() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'new': return 'bg-blue-100 text-blue-800'
-      case 'in_progress': return 'bg-orange-100 text-orange-800'
-      case 'resolved': return 'bg-green-100 text-green-800'
-      case 'closed': return 'bg-gray-100 text-gray-800'
-      case 'acknowledged': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'new': return 'bg-blue-100 text-blue-900'
+      case 'in_progress': return 'bg-orange-100 text-orange-900'
+      case 'resolved': return 'bg-green-100 text-green-900'
+      case 'closed': return 'bg-gray-100 text-gray-900'
+      case 'acknowledged': return 'bg-purple-100 text-purple-900'
+      default: return 'bg-gray-100 text-gray-900'
     }
   }
 
@@ -110,11 +110,11 @@ export default function IncidentList() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
-      case 'low': return 'bg-green-100 text-green-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'high': return 'bg-orange-100 text-orange-800'
-      case 'urgent': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'low': return 'bg-green-100 text-green-900'
+      case 'medium': return 'bg-yellow-100 text-yellow-900'
+      case 'high': return 'bg-orange-100 text-orange-900'
+      case 'urgent': return 'bg-red-100 text-red-900'
+      default: return 'bg-gray-100 text-gray-900'
     }
   }
 
@@ -141,15 +141,15 @@ export default function IncidentList() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-300 p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">All Incidents</h1>
-            <p className="text-gray-600 mt-1">Manage and track reported incidents</p>
+            <p className="text-gray-700 mt-1">Manage and track reported incidents</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">
-              <ArrowDownTrayIcon className="w-4 h-4" />
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 text-gray-900 font-semibold shadow-sm transition-all">
+              <ArrowDownTrayIcon className="w-5 h-5 text-gray-700" />
               <span>Export</span>
             </button>
           </div>
@@ -158,13 +158,13 @@ export default function IncidentList() {
         {/* Search and Filters */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
             <input
               type="text"
               placeholder="Search incidents..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-600 font-medium shadow-sm"
             />
           </div>
           
@@ -172,14 +172,14 @@ export default function IncidentList() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium shadow-sm"
             >
-              <option value="">All Statuses</option>
-              <option value="new">New</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-              <option value="acknowledged">Acknowledged</option>
+              <option value="" className="text-gray-700">All Statuses</option>
+              <option value="new" className="text-gray-900">New</option>
+              <option value="in_progress" className="text-gray-900">In Progress</option>
+              <option value="resolved" className="text-gray-900">Resolved</option>
+              <option value="closed" className="text-gray-900">Closed</option>
+              <option value="acknowledged" className="text-gray-900">Acknowledged</option>
             </select>
           </div>
           
@@ -187,25 +187,25 @@ export default function IncidentList() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium shadow-sm"
             >
-              <option value="">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
+              <option value="" className="text-gray-700">All Priorities</option>
+              <option value="low" className="text-gray-900">Low</option>
+              <option value="medium" className="text-gray-900">Medium</option>
+              <option value="high" className="text-gray-900">High</option>
+              <option value="urgent" className="text-gray-900">Urgent</option>
             </select>
           </div>
         </div>
 
         {(searchTerm || statusFilter || priorityFilter) && (
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-600">
+          <div className="flex justify-between items-center mb-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm font-semibold text-blue-800">
               Showing {filteredIncidents.length} of {incidents.length} incidents
             </p>
             <button 
               onClick={clearFilters}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm font-bold text-blue-700 hover:text-blue-900 bg-white px-3 py-1.5 rounded-lg border border-blue-300 transition-colors"
             >
               Clear Filters
             </button>
@@ -216,13 +216,13 @@ export default function IncidentList() {
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse border border-gray-200">
+                <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2 mb-4"></div>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded"></div>
                 </div>
               </div>
             ))}
@@ -233,24 +233,24 @@ export default function IncidentList() {
               filteredIncidents.map((incident) => (
                 <div 
                   key={incident.id} 
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-bold text-gray-900">{incident.title}</h3>
-                        <span className="text-sm font-medium text-gray-500">{incident.incident_id}</span>
+                        <h3 className="font-bold text-gray-900 text-lg">{incident.title}</h3>
+                        <span className="text-sm font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded">{incident.incident_id}</span>
                         {incident.is_overdue && (
-                          <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                          <span className="px-2 py-1 bg-red-100 text-red-900 text-xs font-bold rounded-full border border-red-300">
                             Overdue
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-1">{incident.description}</p>
+                      <p className="text-sm text-gray-700 font-medium line-clamp-1">{incident.description}</p>
                     </div>
                     <button 
                       onClick={() => handleViewDetails(incident.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold shadow-md"
                     >
                       <EyeIcon className="w-4 h-4" />
                       <span>View Details</span>
@@ -259,70 +259,70 @@ export default function IncidentList() {
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500 mb-1">Status</p>
-                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${getStatusColor(incident.status)}`}>
+                      <p className="text-gray-600 font-bold mb-1">Status</p>
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold ${getStatusColor(incident.status)}`}>
                         {getStatusIcon(incident.status)}
                         <span className="capitalize">{incident.status.replace('_', ' ')}</span>
                       </div>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Priority</p>
-                      <span className={`inline-block px-2.5 py-1 rounded-full font-medium capitalize ${getPriorityColor(incident.priority)}`}>
+                      <p className="text-gray-600 font-bold mb-1">Priority</p>
+                      <span className={`inline-block px-3 py-1.5 rounded-full font-bold capitalize ${getPriorityColor(incident.priority)}`}>
                         {incident.priority}
                       </span>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Category</p>
-                      <p className="font-medium text-gray-900 capitalize">
+                      <p className="text-gray-600 font-bold mb-1">Category</p>
+                      <p className="font-bold text-gray-900 capitalize">
                         {incident.category_name}
                         {incident.subcategory_name && (
-                          <span className="text-gray-600 font-normal"> / {incident.subcategory_name}</span>
+                          <span className="text-gray-700 font-normal"> / {incident.subcategory_name}</span>
                         )}
                       </p>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Location</p>
-                      <p className="font-medium text-gray-900 truncate">
+                      <p className="text-gray-600 font-bold mb-1">Location</p>
+                      <p className="font-bold text-gray-900 truncate">
                         {incident.location_description || incident.location_display || 'N/A'}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t-2 border-gray-100 text-sm">
                     <div>
-                      <p className="text-gray-500 mb-1">Reported By</p>
-                      <p className="font-medium text-gray-900">{incident.created_by_name}</p>
+                      <p className="text-gray-600 font-bold mb-1">Reported By</p>
+                      <p className="font-bold text-gray-900">{incident.created_by_name}</p>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Assigned To</p>
-                      <p className="font-medium text-gray-900">
-                        {incident.assigned_to_name || <span className="text-gray-500">Unassigned</span>}
+                      <p className="text-gray-600 font-bold mb-1">Assigned To</p>
+                      <p className="font-bold text-gray-900">
+                        {incident.assigned_to_name || <span className="text-gray-700 font-medium">Unassigned</span>}
                       </p>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Created</p>
-                      <p className="font-medium text-gray-900">{formatDate(incident.created_at)}</p>
+                      <p className="text-gray-600 font-bold mb-1">Created</p>
+                      <p className="font-bold text-gray-900">{formatDate(incident.created_at)}</p>
                     </div>
                     
                     <div>
-                      <p className="text-gray-500 mb-1">Last Updated</p>
-                      <p className="font-medium text-gray-900">{formatDate(incident.updated_at)}</p>
+                      <p className="text-gray-600 font-bold mb-1">Last Updated</p>
+                      <p className="font-bold text-gray-900">{formatDate(incident.updated_at)}</p>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <ExclamationCircleIcon className="w-8 h-8 text-gray-400" />
+              <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                <div className="mx-auto w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                  <ExclamationCircleIcon className="w-8 h-8 text-gray-600" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">No incidents found</h3>
-                <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">No incidents found</h3>
+                <p className="text-gray-700 font-medium">Try adjusting your search or filter criteria</p>
               </div>
             )}
           </div>

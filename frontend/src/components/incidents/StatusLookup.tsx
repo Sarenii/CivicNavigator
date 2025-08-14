@@ -1,210 +1,333 @@
+// components/staff/IncidentList.tsx
 'use client'
+
 import { useState, useEffect } from 'react'
 import { useApi } from '@/hooks/useApi'
 import { INCIDENTS_URL } from '../../../handler/apiConfig'
 import { handleApiError } from '@/hooks/useApiErrorHandler'
 import { toast } from 'sonner'
-import type { IncidentDetail } from '../../../types'
 import { 
   MagnifyingGlassIcon,
+  FunnelIcon,
+  ArrowDownTrayIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
   PlayIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
-export default function StatusLookup() {
-  const [referenceId, setReferenceId] = useState('')
-  const [searchParams, setSearchParams] = useState<Record<string, string> | null>(null)
+interface Incident {
+  id: string;
+  incident_id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category_name: string;
+  subcategory_name?: string;
+  created_by_name: string;
+  assigned_to_name?: string;
+  location_description: string;
+  location_display?: string;
+  age_in_hours: number;
+  is_overdue: boolean;
+  sla_due_date: string;
+  created_at: string;
+  updated_at: string;
+}
 
-  // --- API Hook ---
-  const { useFetchData } = useApi<IncidentDetail, any>(INCIDENTS_URL)
-  const { 
-    data: searchResult, 
-    isLoading: isSearching, 
-    error,
-    isSuccess // Flag from react-query to know when a fetch is successful
-  } = useFetchData(1, searchParams || {});
-
-  // --- Derived State ---
-  const incidentData = searchResult?.results?.[0] || null;
-
-  // --- Effects ---
-  // This effect handles the "not found" toast message with a clear explanation.
-  useEffect(() => {
-    if (isSuccess && searchParams && (!searchResult?.results || searchResult.results.length === 0)) {
-      // CORRECTED: Provide a more descriptive error message to the user.
-      toast.error('Incident Not Found', {
-        description: 'Please check the reference ID. Note: you can only look up incidents that you have reported.',
-      });
-    }
-  }, [isSuccess, searchResult, searchParams]);
+export default function IncidentList() {
+  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [filteredIncidents, setFilteredIncidents] = useState<Incident[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [priorityFilter, setPriorityFilter] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(true)
   
-  // This effect handles API errors.
+  const { useFetchData } = useApi<Incident, any>(INCIDENTS_URL)
+  const { data: incidentsData, error } = useFetchData(1, { page_size: 100 })
+
+  useEffect(() => {
+    if (incidentsData?.results) {
+      setIncidents(incidentsData.results)
+      setFilteredIncidents(incidentsData.results)
+      setIsLoading(false)
+    }
+  }, [incidentsData])
+
   useEffect(() => {
     if (error) {
-      handleApiError(error, 'Failed to retrieve incident status.')
-      setSearchParams(null) // Clear search on error
+      handleApiError(error, 'Failed to retrieve incidents.')
+      setIsLoading(false)
     }
   }, [error])
 
-  // --- Handlers ---
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!referenceId.trim()) {
-      toast.warning('Please enter a reference ID.')
-      return
+  useEffect(() => {
+    let result = incidents
+    
+    if (searchTerm) {
+      result = result.filter(incident => 
+        incident.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        incident.incident_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        incident.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     }
-    setSearchParams({ search: referenceId.trim() })
-  }
+    
+    if (statusFilter) {
+      result = result.filter(incident => incident.status === statusFilter)
+    }
+    
+    if (priorityFilter) {
+      result = result.filter(incident => incident.priority === priorityFilter)
+    }
+    
+    setFilteredIncidents(result)
+  }, [incidents, searchTerm, statusFilter, priorityFilter])
 
-  const resetSearch = () => {
-    setReferenceId('')
-    setSearchParams(null)
-  }
-
-  // --- Helper Functions ---
   const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case 'NEW': return 'text-blue-600 bg-blue-100'
-      case 'IN_PROGRESS': return 'text-orange-600 bg-orange-100'
-      case 'RESOLVED': return 'text-green-700 bg-green-100'
-      case 'CLOSED': return 'text-gray-600 bg-gray-100'
-      default: return 'text-gray-600 bg-gray-100'
+    switch (status.toLowerCase()) {
+      case 'new': return 'bg-blue-100 text-blue-800'
+      case 'in_progress': return 'bg-orange-100 text-orange-800'
+      case 'resolved': return 'bg-green-100 text-green-800'
+      case 'closed': return 'bg-gray-100 text-gray-800'
+      case 'acknowledged': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status.toUpperCase()) {
-      case 'NEW': return <ClockIcon className="w-4 h-4" />
-      case 'IN_PROGRESS': return <PlayIcon className="w-4 h-4" />
-      case 'RESOLVED': return <CheckCircleIcon className="w-4 h-4" />
-      case 'CLOSED': return <DocumentTextIcon className="w-4 h-4" />
+    switch (status.toLowerCase()) {
+      case 'new': return <ClockIcon className="w-4 h-4" />
+      case 'in_progress': return <PlayIcon className="w-4 h-4" />
+      case 'resolved': return <CheckCircleIcon className="w-4 h-4" />
+      case 'closed': return <DocumentTextIcon className="w-4 h-4" />
+      case 'acknowledged': return <ExclamationCircleIcon className="w-4 h-4" />
       default: return <ExclamationCircleIcon className="w-4 h-4" />
     }
   }
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'low': return 'bg-green-100 text-green-800'
+      case 'medium': return 'bg-yellow-100 text-yellow-800'
+      case 'high': return 'bg-orange-100 text-orange-800'
+      case 'urgent': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
-  // --- Render Logic ---
+  const clearFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('')
+    setPriorityFilter('')
+  }
+
+  const handleViewDetails = (incidentId: string) => {
+    // Navigate to incident details page
+    window.location.href = `/incidents/${incidentId}`
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6">
-      {/* Search Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 md:p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <MagnifyingGlassIcon className="w-5 h-5 text-blue-600" />
-          </div>
+    <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Check Incident Status</h1>
-            <p className="text-sm text-gray-600">Track the progress of your reported incident</p>
+            <h1 className="text-2xl font-bold text-gray-900">All Incidents</h1>
+            <p className="text-gray-600 mt-1">Manage and track reported incidents</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">
+              <ArrowDownTrayIcon className="w-4 h-4" />
+              <span>Export</span>
+            </button>
           </div>
         </div>
 
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={referenceId}
-            onChange={(e) => setReferenceId(e.target.value.toUpperCase())}
-            placeholder="Enter reference ID (e.g., INC-123456)"
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isSearching}
-          />
-          <button
-            type="submit"
-            disabled={isSearching || !referenceId.trim()}
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {isSearching ? 'Searching...' : 'Search'}
-          </button>
-        </form>
-      </div>
-
-      {/* Loading Skeleton */}
-      {isSearching && (
-        <div className="bg-white rounded-xl shadow-sm border p-8 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-8"></div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="h-4 bg-gray-200 rounded w-full"></div>
-            <div className="h-4 bg-gray-200 rounded w-full"></div>
+        {/* Search and Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search incidents..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="new">New</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+              <option value="acknowledged">Acknowledged</option>
+            </select>
+          </div>
+          
+          <div>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
           </div>
         </div>
-      )}
 
-      {/* Incident Details */}
-      {incidentData && !isSearching && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">{incidentData.title}</h2>
-              <p className="text-gray-600">ID: {incidentData.incident_id}</p>
-            </div>
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm ${getStatusColor(incidentData.status)}`}>
-              {getStatusIcon(incidentData.status)}
-              {incidentData.status.replace('_', ' ').toUpperCase()}
-            </div>
+        {(searchTerm || statusFilter || priorityFilter) && (
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm text-gray-600">
+              Showing {filteredIncidents.length} of {incidents.length} incidents
+            </p>
+            <button 
+              onClick={clearFilters}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Clear Filters
+            </button>
           </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Category</h3>
-              <p className="text-gray-600 capitalize">{incidentData.category_name?.replace('_', ' ') || 'N/A'}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
-              <p className="text-gray-600">{incidentData.location_description}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Reported On</h3>
-              <p className="text-gray-600">{formatDate(incidentData.created_at)}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Last Updated</h3>
-              <p className="text-gray-600">{formatDate(incidentData.updated_at)}</p>
-            </div>
+        {/* Incidents List */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
           </div>
-
-          {incidentData.history && incidentData.history.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-4">Status History</h3>
-              <div className="space-y-4">
-                {incidentData.history.map((entry, index) => (
-                  <div key={index} className="flex gap-4 pb-4 border-b last:border-b-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getStatusColor(entry.status)}`}>
-                      {getStatusIcon(entry.status)}
-                    </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredIncidents.length > 0 ? (
+              filteredIncidents.map((incident) => (
+                <div 
+                  key={incident.id} 
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="font-medium text-gray-900 capitalize">{entry.status.replace('_', ' ')}</span>
-                        <span className="text-sm text-gray-700">{formatDate(entry.timestamp)}</span>
+                        <h3 className="font-bold text-gray-900">{incident.title}</h3>
+                        <span className="text-sm font-medium text-gray-500">{incident.incident_id}</span>
+                        {incident.is_overdue && (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                            Overdue
+                          </span>
+                        )}
                       </div>
-                      <p className="text-gray-900 text-sm">{entry.note}</p>
-                      <p className="text-xs text-gray-700 mt-1">By: {entry.actor}</p>
+                      <p className="text-sm text-gray-600 line-clamp-1">{incident.description}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleViewDetails(incident.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                      <span>View Details</span>
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500 mb-1">Status</p>
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${getStatusColor(incident.status)}`}>
+                        {getStatusIcon(incident.status)}
+                        <span className="capitalize">{incident.status.replace('_', ' ')}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Priority</p>
+                      <span className={`inline-block px-2.5 py-1 rounded-full font-medium capitalize ${getPriorityColor(incident.priority)}`}>
+                        {incident.priority}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Category</p>
+                      <p className="font-medium text-gray-900 capitalize">
+                        {incident.category_name}
+                        {incident.subcategory_name && (
+                          <span className="text-gray-600 font-normal"> / {incident.subcategory_name}</span>
+                        )}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Location</p>
+                      <p className="font-medium text-gray-900 truncate">
+                        {incident.location_description || incident.location_display || 'N/A'}
+                      </p>
                     </div>
                   </div>
-                ))}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100 text-sm">
+                    <div>
+                      <p className="text-gray-500 mb-1">Reported By</p>
+                      <p className="font-medium text-gray-900">{incident.created_by_name}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Assigned To</p>
+                      <p className="font-medium text-gray-900">
+                        {incident.assigned_to_name || <span className="text-gray-500">Unassigned</span>}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Created</p>
+                      <p className="font-medium text-gray-900">{formatDate(incident.created_at)}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-500 mb-1">Last Updated</p>
+                      <p className="font-medium text-gray-900">{formatDate(incident.updated_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <ExclamationCircleIcon className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No incidents found</h3>
+                <p className="text-gray-500">Try adjusting your search or filter criteria</p>
               </div>
-            </div>
-          )}
-
-          <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3">
-            <button onClick={resetSearch} className="px-6 py-3 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50">
-              Search Another
-            </button>
-            <button onClick={() => window.location.href = '/report'} className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Report New Issue
-            </button>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

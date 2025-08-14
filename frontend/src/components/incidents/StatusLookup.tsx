@@ -134,11 +134,6 @@ export default function IncidentList() {
     setPriorityFilter('')
   }
 
-  const handleViewDetails = (incidentId: string) => {
-    // Navigate to incident details page
-    window.location.href = `/incidents/${incidentId}`
-  }
-
   return (
     <div className="max-w-7xl mx-auto space-y-6 px-4 sm:px-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-300 p-6">
@@ -248,13 +243,6 @@ export default function IncidentList() {
                       </div>
                       <p className="text-sm text-gray-700 font-medium line-clamp-1">{incident.description}</p>
                     </div>
-                    <button 
-                      onClick={() => handleViewDetails(incident.id)}
-                      className="flex items-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold shadow-md"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      <span>View Details</span>
-                    </button>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">

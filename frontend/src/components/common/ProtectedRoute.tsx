@@ -44,7 +44,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-50 transition-all"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
-                <span>Go to Homepage</span>
+                <span>Homepage</span>
               </button>
             </div>
           </div>

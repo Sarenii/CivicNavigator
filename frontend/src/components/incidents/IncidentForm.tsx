@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useApi } from '@/hooks/useApi'
-// CORRECTED: Using absolute path aliases for consistency and proper module resolution.
 import { INCIDENTS_URL, INCIDENT_CATEGORIES_URL } from '../../../handler/apiConfig'
 import { handleApiError } from '@/hooks/useApiErrorHandler'
 import { toast } from 'sonner'
@@ -12,12 +11,15 @@ import {
   MapPinIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  DocumentTextIcon,
+  UserIcon,
+  EnvelopeIcon,
+  TagIcon
 } from '@heroicons/react/24/outline'
 
-// This interface matches the data from your IncidentCategorySerializer
 interface ApiCategory {
-  id: string; // This is the UUID the backend needs
+  id: string;
   name: string;
   icon?: string;
 }
@@ -25,7 +27,7 @@ interface ApiCategory {
 interface IncidentFormData {
   title: string
   description: string
-  category: string // This will hold the selected category's UUID
+  category: string
   location: string
   contact: string
   photo?: File | null
@@ -34,12 +36,10 @@ interface IncidentFormData {
 export default function IncidentForm() {
   const { user } = useAuth()
   
-  // --- API Hooks ---
   const { useAddItem: createIncident } = useApi<any, IncidentResponse>(INCIDENTS_URL)
   const { useFetchData } = useApi<ApiCategory, any>(INCIDENT_CATEGORIES_URL)
   const { data: categoriesData, isLoading: isLoadingCategories } = useFetchData(1, { page_size: 100 });
-
-  // --- State ---
+  
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [formData, setFormData] = useState<IncidentFormData>({
     title: '',
@@ -52,8 +52,6 @@ export default function IncidentForm() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [successData, setSuccessData] = useState<IncidentResponse | null>(null)
 
-  // --- Effects ---
-  // This effect runs when the categories are fetched from your API
   useEffect(() => {
     if (categoriesData?.results) {
       const categoryIcons: { [key: string]: string } = {
@@ -73,7 +71,6 @@ export default function IncidentForm() {
     }
   }, [categoriesData]);
 
-  // --- Handlers ---
   const validateForm = () => {
     const newErrors: Partial<IncidentFormData> = {}
     if (!formData.title.trim()) newErrors.title = 'Title is required'
@@ -110,38 +107,24 @@ export default function IncidentForm() {
       toast.error('Please fill in all required fields.')
       return
     }
-
-    const formDataToSend = new FormData()
     
-    // These fields match your IncidentCreateSerializer
+    const formDataToSend = new FormData()
     formDataToSend.append('title', formData.title)
     formDataToSend.append('description', formData.description)
-    
-    // **FIX 1: Send the category UUID, not its name.**
-    formDataToSend.append('category', formData.category) 
-
-    // **FIX 2: Send the location string under the 'location_description' key.**
-    formDataToSend.append('location_description', formData.location) 
-    
-    // These fields are for reporter info, which your serializer also accepts
+    formDataToSend.append('category', formData.category)
+    formDataToSend.append('location_description', formData.location)
     formDataToSend.append('reporter_email', formData.contact)
+    
     if (user) {
       formDataToSend.append('reporter_name', user.full_name)
     }
-
-    // This field is for file uploads
+    
     if (formData.photo) {
-      // Your serializer expects 'uploaded_photos' for new images
       formDataToSend.append('uploaded_photos', formData.photo)
     }
     
-    console.log("Submitting FormData to backend:", Object.fromEntries(formDataToSend.entries()));
-
     createIncident.mutate({ item: formDataToSend }, {
       onSuccess: (data) => {
-        // DEBUGGING: Check the console to see the exact structure of the response from the backend.
-        console.log("Data received on success:", data);
-        
         toast.success('Incident reported successfully!')
         setSuccessData(data)
       },
@@ -164,21 +147,37 @@ export default function IncidentForm() {
     setFormErrors({})
   }
 
-  // --- Render Logic ---
   if (successData) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-          <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900">Report Submitted!</h2>
-          <p className="text-gray-600 mt-2 mb-6">{successData.message}</p>
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <p className="text-sm font-semibold text-gray-600">Reference ID</p>
-            <p className="text-2xl font-mono font-bold text-gray-800 tracking-wider">{successData.incident_id}</p>
+        <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl shadow-xl p-8 text-center border border-green-200">
+          <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <CheckCircleIcon className="w-10 h-10 text-green-600" />
           </div>
-          <div className="mt-6 flex gap-4 justify-center">
-            <button onClick={resetForm} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Report Another</button>
-            <button onClick={() => window.location.href = '/status'} className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Check Status</button>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Report Submitted!</h2>
+          <p className="text-gray-700 mt-2 mb-6 text-lg">Thank you for reporting this issue. We'll review it shortly.</p>
+          
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-8">
+            <p className="text-sm font-semibold text-gray-600 mb-1">Reference ID</p>
+            <p className="text-3xl font-mono font-bold text-green-700 tracking-wider">{successData.incident_id}</p>
+            <p className="text-gray-600 mt-3">Please save this reference number to track your report status.</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={resetForm} 
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <DocumentTextIcon className="w-5 h-5" />
+              <span>Report Another</span>
+            </button>
+            <button 
+              onClick={() => window.location.href = '/status'} 
+              className="px-6 py-3 bg-white border-2 border-green-500 text-green-700 font-semibold rounded-lg hover:bg-green-50 transition-all flex items-center justify-center gap-2"
+            >
+              <MapPinIcon className="w-5 h-5" />
+              <span>Check Status</span>
+            </button>
           </div>
         </div>
       </div>
@@ -187,73 +186,141 @@ export default function IncidentForm() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6">
-      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6 md:p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Report Incident</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <ExclamationTriangleIcon className="w-8 h-8" />
+            Report an Incident
+          </h1>
+          <p className="text-blue-100 mt-2">Help us improve our community by reporting issues</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Category Dropdown */}
           <div>
-            <label htmlFor="category" className="block text-sm font-semibold text-gray-900 mb-2">Category *</label>
+            <label htmlFor="category" className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <TagIcon className="w-4 h-4 text-blue-600" />
+              Category <span className="text-red-500">*</span>
+            </label>
             <select
               id="category"
               required
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg ${formErrors.category ? 'border-red-300' : 'border-gray-300'}`}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium ${formErrors.category ? 'border-red-500' : 'border-gray-300'}`}
               disabled={createIncident.isPending || isLoadingCategories}
             >
-              <option value="">{isLoadingCategories ? 'Loading categories...' : 'Select incident category'}</option>
+              <option value="" className="text-gray-500">{isLoadingCategories ? 'Loading categories...' : 'Select incident category'}</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={cat.id} className="text-gray-900">
                   {cat.icon} {cat.name}
                 </option>
               ))}
             </select>
-            {formErrors.category && <p className="text-red-600 text-sm mt-1">{formErrors.category}</p>}
+            {formErrors.category && <p className="text-red-600 text-sm mt-1 font-medium">{formErrors.category}</p>}
           </div>
-
+          
           {/* Location Field */}
           <div>
-            <label htmlFor="location" className="block text-sm font-semibold text-gray-900 mb-2">Location Description *</label>
+            <label htmlFor="location" className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <MapPinIcon className="w-4 h-4 text-blue-600" />
+              Location <span className="text-red-500">*</span>
+            </label>
             <input
               id="location"
               type="text"
               required
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg ${formErrors.location ? 'border-red-300' : 'border-gray-300'}`}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${formErrors.location ? 'border-red-500' : 'border-gray-300'}`}
               placeholder="e.g., Near Juja City Mall, on the main road"
               disabled={createIncident.isPending}
             />
-            {formErrors.location && <p className="text-red-600 text-sm mt-1">{formErrors.location}</p>}
+            {formErrors.location && <p className="text-red-600 text-sm mt-1 font-medium">{formErrors.location}</p>}
           </div>
           
-          {/* Other fields like Title, Description, Contact, Photo remain the same */}
+          {/* Title Field */}
           <div>
-            <label htmlFor="title" className="block text-sm font-semibold text-gray-900 mb-2">Title *</label>
-            <input id="title" type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={`w-full px-4 py-3 border rounded-lg ${formErrors.title ? 'border-red-300' : 'border-gray-300'}`} placeholder="Brief description of the issue" disabled={createIncident.isPending} />
-            {formErrors.title && <p className="text-red-600 text-sm mt-1">{formErrors.title}</p>}
+            <label htmlFor="title" className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-blue-600" />
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input 
+              id="title" 
+              type="text" 
+              required 
+              value={formData.title} 
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${formErrors.title ? 'border-red-500' : 'border-gray-300'}`} 
+              placeholder="Brief description of the issue" 
+              disabled={createIncident.isPending} 
+            />
+            {formErrors.title && <p className="text-red-600 text-sm mt-1 font-medium">{formErrors.title}</p>}
           </div>
+          
+          {/* Description Field */}
           <div>
-            <label htmlFor="description" className="block text-sm font-semibold text-gray-900 mb-2">Detailed Description *</label>
-            <textarea id="description" required rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`w-full px-4 py-3 border rounded-lg resize-none ${formErrors.description ? 'border-red-300' : 'border-gray-300'}`} placeholder="Provide as much detail as possible..." disabled={createIncident.isPending} />
-            {formErrors.description && <p className="text-red-600 text-sm mt-1">{formErrors.description}</p>}
+            <label htmlFor="description" className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-blue-600" />
+              Detailed Description <span className="text-red-500">*</span>
+            </label>
+            <textarea 
+              id="description" 
+              required 
+              rows={4} 
+              value={formData.description} 
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium resize-none ${formErrors.description ? 'border-red-500' : 'border-gray-300'}`} 
+              placeholder="Provide as much detail as possible..." 
+              disabled={createIncident.isPending} 
+            />
+            {formErrors.description && <p className="text-red-600 text-sm mt-1 font-medium">{formErrors.description}</p>}
           </div>
+          
+          {/* Contact Field */}
           <div>
-            <label htmlFor="contact" className="block text-sm font-semibold text-gray-900 mb-2">Your Contact Email *</label>
-            <input id="contact" type="email" required value={formData.contact} onChange={(e) => setFormData({ ...formData, contact: e.target.value })} className={`w-full px-4 py-3 border rounded-lg ${formErrors.contact ? 'border-red-300' : 'border-gray-300'}`} placeholder="we'll send updates to this email" disabled={createIncident.isPending} />
-            {formErrors.contact && <p className="text-red-600 text-sm mt-1">{formErrors.contact}</p>}
+            <label htmlFor="contact" className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <EnvelopeIcon className="w-4 h-4 text-blue-600" />
+              Your Contact Email <span className="text-red-500">*</span>
+            </label>
+            <input 
+              id="contact" 
+              type="email" 
+              required 
+              value={formData.contact} 
+              onChange={(e) => setFormData({ ...formData, contact: e.target.value })} 
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium ${formErrors.contact ? 'border-red-500' : 'border-gray-300'}`} 
+              placeholder="we'll send updates to this email" 
+              disabled={createIncident.isPending} 
+            />
+            {formErrors.contact && <p className="text-red-600 text-sm mt-1 font-medium">{formErrors.contact}</p>}
           </div>
+          
+          {/* Photo Upload */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Photo (Optional)</label>
+            <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <PhotoIcon className="w-4 h-4 text-blue-600" />
+              Photo (Optional)
+            </label>
             {!photoPreview ? (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                <PhotoIcon className="w-8 h-8 text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600"><span className="font-semibold">Click to upload</span></p>
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
+                <PhotoIcon className="w-10 h-10 text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600 font-medium"><span className="text-blue-600">Click to upload</span> or drag and drop</p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
                 <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={createIncident.isPending} />
               </label>
             ) : (
-              <div className="relative"><img src={photoPreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" /><button type="button" onClick={removePhoto} className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full" disabled={createIncident.isPending}><XMarkIcon className="w-4 h-4" /></button></div>
+              <div className="relative">
+                <img src={photoPreview} alt="Preview" className="w-full h-56 object-cover rounded-xl border-2 border-gray-200" />
+                <button 
+                  type="button" 
+                  onClick={removePhoto} 
+                  className="absolute top-3 right-3 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-md"
+                  disabled={createIncident.isPending}
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             )}
           </div>
           
@@ -261,9 +328,22 @@ export default function IncidentForm() {
             <button
               type="submit"
               disabled={createIncident.isPending || isLoadingCategories}
-              className="w-full py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {createIncident.isPending ? 'Submitting...' : 'Submit Incident Report'}
+              {createIncident.isPending ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <ExclamationTriangleIcon className="w-5 h-5" />
+                  Submit Incident Report
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -1,12 +1,13 @@
 import ChatLayout from '@/components/chat/ChatLayout'
 import ProtectedRoute from '@/components/common/ProtectedRoute'
+import IncidentForm from '@/components/incidents/IncidentForm'
 
 export default function ChatPage() {
   return (
-
-      <div className="h-screen -m-4"> {/* Remove container padding for full-screen */}
+    <ProtectedRoute>
+      <div className="min-h-screen py-8">
         <ChatLayout />
       </div>
-    
+    </ProtectedRoute>
   )
 }
